@@ -64,6 +64,13 @@ public class Person extends PersistenceModel {
         }
     }
 
+    public void clearRoles(){
+        for (Role role : roles) {
+            role.setPerson(null);
+        }
+        this.roles.clear();
+    }
+
     public void removeRole(Role role) {
         this.roles.remove(role);
         role.setPerson(null);

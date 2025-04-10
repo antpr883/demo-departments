@@ -1,19 +1,25 @@
 package com.demo.departments.demoDepartments;
 
 
+import com.cosium.spring.data.jpa.entity.graph.domain2.DynamicEntityGraph;
+import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
 import com.demo.departments.demoDepartments.persistence.model.*;
 import com.demo.departments.demoDepartments.persistence.model.security.Permissions;
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.persistence.repository.*;
+import com.demo.departments.demoDepartments.service.PersonService;
+import com.demo.departments.demoDepartments.service.impl.PersonServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.annotations.processing.Find;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.time.LocalDate;
 import java.util.Optional;
-import java.util.Set;
+
 
 @RequiredArgsConstructor
 @Component
@@ -25,7 +31,7 @@ public class DataLoader implements ApplicationRunner {
     private final ContactRepository contactRepository;
     private final AddressRepository addressRepository;
     private final PermissionsRepository permissionsRepository;
-
+   private final PersonService personService;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -33,10 +39,26 @@ public class DataLoader implements ApplicationRunner {
         Person person = createPerson();
         Person savedPerson = personRepository.save(person);
         System.out.println("Saved Person: " + savedPerson);
+
+//        Optional<Person> findById = personService.findById(1L);
+//
+//        Optional<Person> byId = personService.findByFull();
+//        byId.get().getAddresses().iterator().next().getCountry();
+
+//        Person byIdWithGraph = personService.findByIdFull(1L, null);
+//        byIdWithGraph.getAddresses().iterator().next().getCountry();
+//        Optional<Person> byId = personRepository.findById(1L);
+//        Person person1 = byId.get();
+//        Set<Address> addresses = person1.getAddresses();
+        savedPerson.clearRoles();
+
+        personRepository.save(savedPerson);
+
         Optional<Person> byId = personRepository.findById(1L);
-        Person person1 = byId.get();
-        Set<Address> addresses = person1.getAddresses();
+
         String a = "";
+
+       personService.deleteById(1L);
 
     }
 

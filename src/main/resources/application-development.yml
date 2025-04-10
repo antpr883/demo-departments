@@ -9,33 +9,37 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    show-sql: true
+    open-in-view: false
     properties:
-      hibernate.jdbc.time_zone: UTC  # Force UTC for all database connections
-      hibernate.timezone.default_storage: NORMALIZE  # Normalize time zone storage
-      hibernate.type.preferred_instant_jdbc_type: TIMESTAMP  # Store Instant as TIMESTAMP without time zone
-      hibernate.max_fetch_depth: 3
-      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect  # Explicitly set PostgreSQL dialect
-
-
-        # Query restrictions & security
-      hibernate.query.fail_on_pagination_over_collection_fetch: true  # Prevent pagination over collection fetch joins
-      hibernate.query.in_clause_parameter_padding: true  # Enable parameter padding in IN clause for better query caching
-
-      hibernate.jdbc.batch_size: 25  # Enable batch processing for INSERT/UPDATE (adjust as needed)
-      hibernate.order_inserts: true  # Group INSERT statements for better performance
-      hibernate.order_updates: true  # Group UPDATE statements for better performance
-
+      hibernate.jdbc.time_zone: UTC
+      hibernate.timezone.default_storage: NORMALIZE
+      hibernate.type.preferred_instant_jdbc_type: TIMESTAMP
+      hibernate.id.new_generator_mappings: true
+      #hibernate.connection.provider_disables_autocommit: true
+#      hibernate.cache.use_second_level_cache: true
+#      hibernate.cache.use_query_cache: false
+#      hibernate.generate_statistics: false
+#      # modify batch size as necessary
+#      hibernate.jdbc.batch_size: 25
+#      hibernate.order_inserts: true
+#      hibernate.order_updates: true
+#      hibernate.query.fail_on_pagination_over_collection_fetch: true
+#      hibernate.query.in_clause_parameter_padding: true
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
 
 
 # Logging Configuration
 logging:
   level:
-    org.hibernate.SQL: DEBUG    # Enable logging of SQL statements
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Enable logging of parameter bindings for SQL
-    com.demo.library: DEBUG      # Your own application logs
-  loggers:
-    org.springframework.web: DEBUG  # Optional: Enable debug for Spring web layer
+    org.hibernate.SQL: DEBUG
+    com.demo.library: DEBUG
+    net.ttddyy.dsproxy.listener: DEBUG
+    com.cosium.spring.data: TRACE
