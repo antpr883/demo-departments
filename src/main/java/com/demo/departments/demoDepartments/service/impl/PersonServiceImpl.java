@@ -5,6 +5,9 @@ import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
 import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.repository.PersonRepository;
 import com.demo.departments.demoDepartments.service.PersonService;
+import com.demo.departments.demoDepartments.service.dto.PersonDTO;
+import com.demo.departments.demoDepartments.service.dto.mapper.MappingOptions;
+import com.demo.departments.demoDepartments.service.dto.mapper.PersonMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +22,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PersonServiceImpl implements PersonService {
 
-
+    private final PersonMapper personMapper;
     private final PersonRepository personRepository;
 
     @Override
@@ -30,9 +33,12 @@ public class PersonServiceImpl implements PersonService {
     @Transactional(readOnly = true)
     @Override
     public Person findByIdFull(Long id, String params) {
+
+
         EntityGraph entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").addPath("roles.permissions").build();
         Person person = personRepository.findById(id, entityGraph)
                 .orElseThrow(() -> new RuntimeException("Person not found with id: " + id));
+        PersonDTO dto = personMapper.toDto(person, MappingOptions.basic());
         return person;
     }
 
