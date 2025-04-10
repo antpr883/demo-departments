@@ -30,15 +30,17 @@ public class PersonServiceImpl implements PersonService {
     @Transactional(readOnly = true)
     @Override
     public Person findByIdFull(Long id, String params) {
-       EntityGraph  entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").build();
-        return personRepository.findByIdWithGraph(1L, entityGraph);
+        EntityGraph entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").addPath("roles.permissions").build();
+        Person person = personRepository.findById(id, entityGraph)
+                .orElseThrow(() -> new RuntimeException("Person not found with id: " + id));
+        return person;
     }
 
     @Transactional(readOnly = true)
     @Override
     public Optional<Person> findByFull(){
         EntityGraph  entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").build();
-        Optional<Person> byId = personRepository.findById(1L, entityGraph);
+        Optional<Person> byId = personRepository.findById(1L);
         return byId;
     }
 

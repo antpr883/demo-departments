@@ -16,6 +16,6 @@ public interface BaseCustomJpaRepository <T, ID extends Serializable> extends En
 
     void deleteByIdCustom(ID id);
 
-    T findByIdWithGraph(ID id , EntityGraph entityGraph);
+//    T findByIdWithGraph(ID id , EntityGraph entityGraph);
 
 }

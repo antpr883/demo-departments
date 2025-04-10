@@ -8,5 +8,32 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+
+  jpa:
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.timezone.default_storage: NORMALIZE
+      hibernate.type.preferred_instant_jdbc_type: TIMESTAMP
+      hibernate.id.new_generator_mappings: true
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+
+
+# Logging Configuration
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    com.demo.library: DEBUG
+    net.ttddyy.dsproxy.listener: DEBUG
+    com.cosium.spring.data: TRACE
+
 server:
   url: ${SERVER_URL}

@@ -39,11 +39,11 @@ public class BaseCustomJpaRepositoryImpl<T, ID extends Serializable> extends Ent
         }
     }
 
-    @Override
-    public T findByIdWithGraph(ID id, EntityGraph entityGraph) {
-        Optional<T> byId = super.findById(id, entityGraph);
-        return super.findById(id, entityGraph).get();
-    }
+//    @Override
+//    public T findByIdWithGraph(ID id, EntityGraph entityGraph) {
+//        Optional<T> byId = super.findById(id, entityGraph);
+//        return super.findById(id, entityGraph).get();
+//    }
 
     public void deleteByIdCustom(ID id) {
         T entity = entityManager.find(domainClass, id);

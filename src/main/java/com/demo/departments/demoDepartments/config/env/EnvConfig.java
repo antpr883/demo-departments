@@ -1,4 +1,4 @@
-package com.demo.departments.demoDepartments.config;
+package com.demo.departments.demoDepartments.config.env;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Bean;

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.Set;
 
 
 @RequiredArgsConstructor
@@ -36,29 +37,27 @@ public class DataLoader implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
-        Person person = createPerson();
-        Person savedPerson = personRepository.save(person);
-        System.out.println("Saved Person: " + savedPerson);
+//        Person person = createPerson();
+//        Person savedPerson = personRepository.save(person);
+//        System.out.println("Saved Person: " + savedPerson);
 
 //        Optional<Person> findById = personService.findById(1L);
 //
-//        Optional<Person> byId = personService.findByFull();
-//        byId.get().getAddresses().iterator().next().getCountry();
 
-//        Person byIdWithGraph = personService.findByIdFull(1L, null);
-//        byIdWithGraph.getAddresses().iterator().next().getCountry();
-//        Optional<Person> byId = personRepository.findById(1L);
-//        Person person1 = byId.get();
-//        Set<Address> addresses = person1.getAddresses();
-        savedPerson.clearRoles();
-
-        personRepository.save(savedPerson);
-
-        Optional<Person> byId = personRepository.findById(1L);
+        Person byIdFull = personService.findByIdFull(1L, null);
+        Set<Address> addresses = byIdFull.getAddresses();
+        String street = addresses.iterator().next().getStreet();
+        Set<Contact> contacts = byIdFull.getContacts();
+        String email = contacts.iterator().next().getEmail();
+        Set<Role> roles = byIdFull.getRoles();
+        String role = roles.iterator().next().getRole();
+        Set<Permissions> permissions = byIdFull.getRoles().iterator().next().getPermissions();
+        String permission = permissions.iterator().next().getPermission();
 
         String a = "";
 
-       personService.deleteById(1L);
+        System.out.println("Person:"+byIdFull.getFirstName()+" "+street+" "+email+" "+role+" "+permission);
+        // personService.deleteById(1L);
 
     }
 
