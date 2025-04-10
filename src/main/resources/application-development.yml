@@ -1,0 +1,41 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?${DB_PARAMS}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate.jdbc.time_zone: UTC  # Force UTC for all database connections
+      hibernate.timezone.default_storage: NORMALIZE  # Normalize time zone storage
+      hibernate.type.preferred_instant_jdbc_type: TIMESTAMP  # Store Instant as TIMESTAMP without time zone
+      hibernate.max_fetch_depth: 3
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect  # Explicitly set PostgreSQL dialect
+
+
+        # Query restrictions & security
+      hibernate.query.fail_on_pagination_over_collection_fetch: true  # Prevent pagination over collection fetch joins
+      hibernate.query.in_clause_parameter_padding: true  # Enable parameter padding in IN clause for better query caching
+
+      hibernate.jdbc.batch_size: 25  # Enable batch processing for INSERT/UPDATE (adjust as needed)
+      hibernate.order_inserts: true  # Group INSERT statements for better performance
+      hibernate.order_updates: true  # Group UPDATE statements for better performance
+
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+
+# Logging Configuration
+logging:
+  level:
+    org.hibernate.SQL: DEBUG    # Enable logging of SQL statements
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Enable logging of parameter bindings for SQL
+    com.demo.library: DEBUG      # Your own application logs
+  loggers:
+    org.springframework.web: DEBUG  # Optional: Enable debug for Spring web layer

@@ -1,0 +1,35 @@
+<configuration scan="true">
+
+    <springProperty name="log.level" source="logging.level.root" defaultValue="INFO" />
+    <springProperty name="log.pattern" source="logging.pattern.console"
+                    defaultValue="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <property name="CONSOLE_LOG_PATTERN" value="${log.pattern}" />
+
+    <property name="SQL_LOG_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="SQL" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${SQL_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${log.level}">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL" />
+    </logger>
+
+    <logger name="org.hibernate.type.descriptor.sql" level="TRACE"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="com.mycompany.myapp" level="INFO"/>
+
+</configuration>
