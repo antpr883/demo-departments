@@ -59,6 +59,8 @@ public class MappingOptions {
     
     public static MappingOptions complete() {
         return MappingOptions.builder()
+                .includeAddresses(true)
+                .includeContacts(true)
                 .includeAuditFields(true)
                 .includePermissions(true)
                 .includeRoles(true)

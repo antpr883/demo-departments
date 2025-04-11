@@ -13,8 +13,7 @@ import java.util.List;
  */
 @Mapper(
         config = CommonMapperConfig.class,
-        uses = {AddressMapper.class, ContactMapper.class, RoleMapper.class},
-        builder = @Builder(disableBuilder = true)
+        uses = {AddressMapper.class, ContactMapper.class, RoleMapper.class}
 )
 public interface PersonMapper {
 
@@ -77,7 +76,6 @@ public interface PersonMapper {
     @Mapping(target = "modifiedDate", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "modifiedBy", ignore = true)
-    @Mapping(target = "id", expression = "java(options.isIncludeId() ? dto.getId() : null)")
     @Mapping(target = "addresses", expression = "java(options.isIncludeAddresses() ? addressMapper.toEntityList(dto.getAddresses()) : null)")
     @Mapping(target = "contacts", expression = "java(options.isIncludeContacts() ? contactMapper.toEntityList(dto.getContacts()) : null)")
     @Mapping(target = "roles", expression = "java(options.isIncludeRoles() ? roleMapper.toEntityList(dto.getRoles()) : null)")
