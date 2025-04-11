@@ -3,6 +3,7 @@ package com.demo.departments.demoDepartments.persistence.model.security;
 
 import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.model.base.PersistenceModel;
+import com.demo.departments.demoDepartments.persistence.utils.mapping.MappingAttribute;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -23,6 +24,11 @@ public class Role extends PersistenceModel {
 
     @Builder.Default
     @ToString.Exclude
+    @MappingAttribute(
+            path = "permissions",
+            targetEntity = Permissions.class,
+            description = "Role permissions"
+    )
     @OneToMany(mappedBy = "role", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<Permissions> permissions = new HashSet<>();
 

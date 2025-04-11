@@ -3,6 +3,7 @@ package com.demo.departments.demoDepartments.persistence.model;
 
 import com.demo.departments.demoDepartments.persistence.model.base.PersistenceModel;
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
+import com.demo.departments.demoDepartments.persistence.utils.mapping.MappingAttribute;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -34,16 +35,32 @@ public class Person extends PersistenceModel {
 
     @ToString.Exclude
     @Builder.Default
+    @MappingAttribute(
+            path = "addresses",
+            targetEntity = Address.class,
+            description = "Person addresses"
+    )
     @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Address> addresses = new HashSet<>();
 
     @ToString.Exclude
     @Builder.Default
+    @MappingAttribute(
+            path = "contacts",
+            targetEntity = Contact.class,
+            description = "Person contacts"
+    )
     @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Contact> contacts = new HashSet<>();
 
     @ToString.Exclude
     @Builder.Default
+    @MappingAttribute(
+            path = "roles",
+            withSubAttributes = true,
+            targetEntity = Role.class,
+            description = "Roles for current person"
+    )
     @OneToMany(mappedBy = "person", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<Role> roles = new HashSet<>();
 
