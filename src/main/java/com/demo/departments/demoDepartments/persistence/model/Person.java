@@ -31,7 +31,7 @@ public class Person extends PersistenceModel {
     private String lastName;
 
     @Column(name = "birthday")
-    private LocalDate birthday;
+    private LocalDate birthDay;
 
     @ToString.Exclude
     @Builder.Default
@@ -117,10 +117,10 @@ public class Person extends PersistenceModel {
         contact.addPerson(null);
     }
 
-    public Person(String password, String firstName, String lastName, LocalDate birthday) {
+    public Person(String password, String firstName, String lastName, LocalDate birthDay) {
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.birthday = birthday;
+        this.birthDay = birthDay;
     }
 }

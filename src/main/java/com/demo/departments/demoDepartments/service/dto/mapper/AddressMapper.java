@@ -2,99 +2,31 @@ package com.demo.departments.demoDepartments.service.dto.mapper;
 
 import com.demo.departments.demoDepartments.service.dto.AddressDTO;
 import com.demo.departments.demoDepartments.persistence.model.Address;
-import com.demo.departments.demoDepartments.persistence.repository.PersonRepository;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Mapper interface for converting between Address entity and its DTOs
- */
 @Mapper(config = CommonMapperConfig.class)
-public abstract class AddressMapper {
-    
-    @Autowired
-    protected PersonRepository personRepository;
-    
-    // Standard entity to DTO
-    @Mapping(target = "personId", source = "person.id")
-    public abstract AddressDTO toDto(Address entity);
-    
-    // Flexible entity to DTO with options
-    @Mapping(target = "personId", source = "person.id")
-    @Mapping(target = "id", expression = "java(options.isIncludeId() ? entity.getId() : null)")
-    @Mapping(target = "createdDate", expression = "java(options.isIncludeAuditFields() ? entity.getCreatedDate() : null)")
-    @Mapping(target = "modifiedDate", expression = "java(options.isIncludeAuditFields() ? entity.getModifiedDate() : null)")
-    @Mapping(target = "createdBy", expression = "java(options.isIncludeAuditFields() ? entity.getCreatedBy() : null)")
-    @Mapping(target = "modifiedBy", expression = "java(options.isIncludeAuditFields() ? entity.getModifiedBy() : null)")
-    public abstract AddressDTO toDto(Address entity, MappingOptions options);
-    
-    // Standard list conversions
-    public abstract List<AddressDTO> toDtoList(List<Address> entities);
-    
-    // Flexible list with options
-    public List<AddressDTO> toDtoList(List<Address> entities, MappingOptions options) {
-        if (entities == null) {
-            return null;
-        }
-        return entities.stream()
-                .map(entity -> toDto(entity, options))
-                .toList();
-    }
-    
-    // Standard DTO to Entity
-    @Mapping(target = "person", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "modifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "modifiedBy", ignore = true)
-    public abstract Address toEntity(AddressDTO dto);
-    
-    // Flexible DTO to Entity with options
-    @Mapping(target = "person", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "modifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "modifiedBy", ignore = true)
-    @Mapping(target = "id", expression = "java(options.isIncludeId() ? dto.getId() : null)")
-    public abstract Address toEntity(AddressDTO dto, MappingOptions options);
-    
-    // List conversion
-    public abstract List<Address> toEntityList(List<AddressDTO> dtos);
-    
-    // Flexible list with options
-    public List<Address> toEntityList(List<AddressDTO> dtos, MappingOptions options) {
-        if (dtos == null) {
-            return null;
-        }
-        return dtos.stream()
-                .map(dto -> toEntity(dto, options))
-                .toList();
-    }
-    
-    // Standard update existing entity with DTO values
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "person", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
+public interface AddressMapper {
+
+    @Mapping(target = "id", expression = "java(entity.getId())")
+    @Mapping(target = "country", expression = "java(options.isBasicOrAbove() ? entity.getCountry() : null)")
+    @Mapping(target = "city", expression = "java(options.isBasicOrAbove() ? entity.getCity() : null)")
+    @Mapping(target = "street", expression = "java(options.isBasicOrAbove() ? entity.getStreet() : null)")
+    @Mapping(target = "createdBy", expression = "java(options.isComplete() ? entity.getCreatedBy() : null)")
+    @Mapping(target = "createdDate", expression = "java(options.isComplete() ? entity.getCreatedDate() : null)")
+    AddressDTO toDto(Address entity, @Context MappingOptions options);
+
+    @InheritInverseConfiguration
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateEntityFromDto(AddressDTO dto, @MappingTarget Address entity);
-    
-    // Flexible update with options
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "person", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateEntityFromDto(AddressDTO dto, @MappingTarget Address entity, MappingOptions options);
-    
-    // Handle person reference by ID
-    @AfterMapping
-    protected void setPerson(AddressDTO dto, @MappingTarget Address entity) {
-        if (dto.getPersonId() != null) {
-            personRepository.findById(dto.getPersonId())
-                .ifPresent(entity::addPerson);
-        }
+    Address toEntity(AddressDTO dto, @Context MappingOptions options);
+
+    default Set<AddressDTO> toDtoSet(Set<Address> entities, @Context MappingOptions options) {
+        return entities == null ? null : entities.stream().map(e -> toDto(e, options)).collect(Collectors.toSet());
+    }
+
+    default Set<Address> toEntitySet(Set<AddressDTO> dtos, @Context MappingOptions options) {
+        return dtos == null ? null : dtos.stream().map(d -> toEntity(d, options)).collect(Collectors.toSet());
     }
 }
