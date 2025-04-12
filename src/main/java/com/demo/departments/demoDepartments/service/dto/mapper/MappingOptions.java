@@ -3,59 +3,48 @@ package com.demo.departments.demoDepartments.service.dto.mapper;
 import com.demo.departments.demoDepartments.service.dto.MappingLevel;
 import lombok.*;
 
-@Data
+import java.util.Set;
+
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class MappingOptions {
 
     private MappingLevel level;
+    private Set<String> fields;
+
+    public boolean includes(String field) {
+        return fields == null || fields.contains(field);
+    }
 
     public boolean isMinimal() {
-        return MappingLevel.MINIMAL.equals(level);
+        return level != null && level == MappingLevel.MINIMAL;
     }
 
     public boolean isBasic() {
-        return MappingLevel.BASIC.equals(level);
+        return level != null && level == MappingLevel.BASIC;
     }
 
     public boolean isSummary() {
-        return MappingLevel.SUMMARY.equals(level);
+        return level != null && level == MappingLevel.SUMMARY;
     }
 
     public boolean isComplete() {
-        return MappingLevel.COMPLETE.equals(level);
+        return level != null && level == MappingLevel.COMPLETE;
     }
 
     public boolean isBasicOrAbove() {
-        return level.ordinal() >= MappingLevel.BASIC.ordinal();
+        return level != null && level.ordinal() >= MappingLevel.BASIC.ordinal();
     }
 
     public boolean isSummaryOrAbove() {
-        return level.ordinal() >= MappingLevel.SUMMARY.ordinal();
+        return level != null && level.ordinal() >= MappingLevel.SUMMARY.ordinal();
     }
 
     public boolean isCompleteOrAbove() {
-        return level.ordinal() >= MappingLevel.COMPLETE.ordinal();
+        return level != null && level.ordinal() >= MappingLevel.COMPLETE.ordinal();
     }
 
-    public static MappingOptions of(MappingLevel level) {
-        return MappingOptions.builder().level(level).build();
-    }
-
-    public static MappingOptions minimal() {
-        return of(MappingLevel.MINIMAL);
-    }
-
-    public static MappingOptions basic() {
-        return of(MappingLevel.BASIC);
-    }
-
-    public static MappingOptions summary() {
-        return of(MappingLevel.SUMMARY);
-    }
-
-    public static MappingOptions complete() {
-        return of(MappingLevel.COMPLETE);
+    public boolean levelOrIncludes(String field, MappingLevel requiredLevel) {
+        return (level != null && level.ordinal() >= requiredLevel.ordinal()) || includes(field);
     }
 }

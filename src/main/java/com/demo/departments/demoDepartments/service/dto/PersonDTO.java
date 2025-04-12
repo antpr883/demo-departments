@@ -23,7 +23,7 @@ public class PersonDTO extends BaseDTO {
     
     private String firstName;
     private String lastName;
-    private LocalDate birthday;
+    private LocalDate birthDay;
     
     // Simple collections with IDs only (for create/update operations)
     @Builder.Default

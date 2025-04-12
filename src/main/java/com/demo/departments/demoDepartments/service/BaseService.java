@@ -1,6 +1,9 @@
 package com.demo.departments.demoDepartments.service;
 
 import com.demo.departments.demoDepartments.persistence.model.base.PersistenceModel;
+import com.demo.departments.demoDepartments.service.dto.base.BaseDTO;
+
+import java.util.Map;
 
 
 /**
@@ -8,7 +11,7 @@ import com.demo.departments.demoDepartments.persistence.model.base.PersistenceMo
  *
  * @param <T> The DTO type
  */
-public interface BaseService<T extends PersistenceModel> {
+public interface BaseService<T extends BaseDTO> {
 
 //    T save(@Valid T dto);
 //
@@ -22,7 +25,7 @@ public interface BaseService<T extends PersistenceModel> {
 //
 //    Optional<T> findById(Long id, EntityGraph entityGraph);
 //
-    T findByIdFull(Long id, String params);
+     T findByIdFull(Long id, Map<String, String> params);
 
 //    List<T> findByIds(Collection<Long> ids, EntityGraph entityGraph);
 //

@@ -27,8 +27,12 @@ public class Address extends PersistenceModel {
     @Column(name = "province", length = 50)
     private String province;
 
+    @Column(name = "city", length = 50)
+    private String city;
+
     @Column(name = "country", length = 50)
     private String country;
+
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)

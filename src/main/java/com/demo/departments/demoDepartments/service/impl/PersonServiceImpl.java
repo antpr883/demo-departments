@@ -8,11 +8,16 @@ import com.demo.departments.demoDepartments.service.PersonService;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingOptions;
 import com.demo.departments.demoDepartments.service.dto.mapper.PersonMapper;
+import com.demo.departments.demoDepartments.service.utils.mapping.GraphBuilderMapperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of PersonService that demonstrates the flexible DTO mapping system
@@ -24,22 +29,28 @@ public class PersonServiceImpl implements PersonService {
 
     private final PersonMapper personMapper;
     private final PersonRepository personRepository;
+    private final GraphBuilderMapperService graphBuilderMappingService;
 
     @Override
     public void deleteById(Long id) {
      personRepository.deleteById(id);
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public Person findByIdFull(Long id, String params) {
+    @Transactional(readOnly = true)
+    public PersonDTO findByIdFull(Long id, Map<String, String> params) {
+        Set<String> dtoFields = parse(params.get("dto_fields"));
+        Set<String> graphFields = parse(params.get("graph_fields"));
 
-
-        EntityGraph entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").addPath("roles.permissions").build();
-        Person person = personRepository.findById(id, entityGraph)
+        EntityGraph graph = graphBuilderMappingService.getGraphWithAttributes(Person.class, graphFields);
+        Person person = personRepository.findById(id, graph)
                 .orElseThrow(() -> new RuntimeException("Person not found with id: " + id));
-        PersonDTO dto = personMapper.toDto(person, MappingOptions.basic());
-        return person;
+
+        MappingOptions options = MappingOptions.builder()
+                .fields(dtoFields)
+                .build();
+
+        return personMapper.toDto(person, options);
     }
 
     @Transactional(readOnly = true)
@@ -54,5 +65,12 @@ public class PersonServiceImpl implements PersonService {
     @Override
     public Optional<Person> findById(Long id) {
         return personRepository.findById(1L);
+    }
+
+    private Set<String> parse(String paramValue) {
+        if (paramValue == null || paramValue.isBlank()) return Set.of();
+        return Arrays.stream(paramValue.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
     }
 }

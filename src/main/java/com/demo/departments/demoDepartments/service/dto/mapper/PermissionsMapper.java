@@ -7,44 +7,37 @@ import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Mapper for converting between Permissions entity and its DTOs
  */
 @Mapper(config = CommonMapperConfig.class)
-public abstract class PermissionsMapper {
+public interface PermissionsMapper {
 
-    @Autowired
-    protected RoleRepository roleRepository;
-    
-    // Entity to DTO conversion
-    @Mapping(target = "roleId", source = "role.id")
-    public abstract PermissionsDTO toDto(Permissions entity);
-    
-    public abstract List<PermissionsDTO> toDtoList(List<Permissions> entities);
-    
-    // DTO to Entity conversion
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "modifiedDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "modifiedBy", ignore = true)
-    public abstract Permissions toEntity(PermissionsDTO dto);
-    
-    // Update existing entity with DTO values
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "createdDate", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
+   @Mapping(target = "id", expression = "java(options.includes(\"permissions\") ? entity.getId() : null)")
+    @Mapping(target = "permission", expression = "java(options.includes(\"permissions\") ? entity.getPermission() : null)")
+    @Mapping(target = "roleId", ignore = true)
+    @Mapping(target = "createdBy", expression = "java(options.includes(\"permissions\") ? entity.getCreatedBy() : null)")
+    @Mapping(target = "createdDate", expression = "java(options.includes(\"permissions\") ? entity.getCreatedDate() : null)")
+    @Mapping(target = "modifiedBy", expression = "java(options.includes(\"permissions\") ? entity.getModifiedBy() : null)")
+    @Mapping(target = "modifiedDate", expression = "java(options.includes(\"permissions\") ? entity.getModifiedDate() : null)")
+    PermissionsDTO toDto(Permissions entity, @Context MappingOptions options);
+
+    @InheritInverseConfiguration
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void updateEntityFromDto(PermissionsDTO dto, @MappingTarget Permissions entity);
-    
-    // After mapping, set up role reference
-    @AfterMapping
-    protected void setRole(PermissionsDTO dto, @MappingTarget Permissions entity) {
-        if (dto.getRoleId() != null) {
-            roleRepository.findById(dto.getRoleId())
-                .ifPresent(entity::setRole);
-        }
+    Permissions toEntity(PermissionsDTO dto, @Context MappingOptions options);
+
+    @Named("partialUpdate")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void partialUpdate(@MappingTarget Permissions entity, PermissionsDTO dto);
+
+    default Set<PermissionsDTO> toDtoSet(Set<Permissions> entities, @Context MappingOptions options) {
+        return entities == null ? null : entities.stream().map(e -> toDto(e, options)).collect(Collectors.toSet());
+    }
+
+    default Set<Permissions> toEntitySet(Set<PermissionsDTO> dtos, @Context MappingOptions options) {
+        return dtos == null ? null : dtos.stream().map(d -> toEntity(d, options)).collect(Collectors.toSet());
     }
 }

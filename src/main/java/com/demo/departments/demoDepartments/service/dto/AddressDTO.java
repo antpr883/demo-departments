@@ -19,8 +19,9 @@ public class AddressDTO extends BaseDTO {
     private String street;
     private String postZipCode;
     private String province;
+    private String city;
     private String country;
-    
+
     // Reference to parent only by ID to avoid circular references
     private Long personId;
 }

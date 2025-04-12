@@ -8,6 +8,7 @@ import com.demo.departments.demoDepartments.persistence.model.security.Permissio
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.persistence.repository.*;
 import com.demo.departments.demoDepartments.service.PersonService;
+import com.demo.departments.demoDepartments.service.dto.PersonDTO;
 import com.demo.departments.demoDepartments.service.impl.PersonServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.annotations.processing.Find;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,20 +47,15 @@ public class DataLoader implements ApplicationRunner {
 //        Optional<Person> findById = personService.findById(1L);
 //
 
-        Person byIdFull = personService.findByIdFull(1L, null);
-        Set<Address> addresses = byIdFull.getAddresses();
-        String street = addresses.iterator().next().getStreet();
-        Set<Contact> contacts = byIdFull.getContacts();
-        String email = contacts.iterator().next().getEmail();
-        Set<Role> roles = byIdFull.getRoles();
-        String role = roles.iterator().next().getRole();
-        Set<Permissions> permissions = byIdFull.getRoles().iterator().next().getPermissions();
-        String permission = permissions.iterator().next().getPermission();
 
+        Map<String, String> params = new HashMap<>();
+        params.put("dto_fields", "id,firstName,contacts,roles,addresses");
+        params.put("graph_fields", "contacts,roles.permissions,addresses");
+
+        PersonDTO dto = personService.findByIdFull(1L, params);
         String a = "";
 
-        System.out.println("Person:"+byIdFull.getFirstName()+" "+street+" "+email+" "+role+" "+permission);
-        // personService.deleteById(1L);
+
 
     }
 
@@ -66,7 +64,7 @@ public class DataLoader implements ApplicationRunner {
                 .password("password123")
                 .firstName("John")
                 .lastName("Doe")
-                .birthday(LocalDate.of(1990, 1, 1))
+                .birthDay(LocalDate.of(1990, 1, 1))
                 .build();
 
         Address address = createAddress(person);
@@ -86,6 +84,7 @@ public class DataLoader implements ApplicationRunner {
                 .street("123 Main St")
                 .postZipCode("12345")
                 .province("Province")
+                .province("City")
                 .country("Country")
                 .build();
 
