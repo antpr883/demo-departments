@@ -1,27 +1,27 @@
 package com.demo.departments.demoDepartments.service.impl;
 
-import com.cosium.spring.data.jpa.entity.graph.domain2.DynamicEntityGraph;
 import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
 import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.repository.PersonRepository;
 import com.demo.departments.demoDepartments.service.PersonService;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
+import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingOptions;
 import com.demo.departments.demoDepartments.service.dto.mapper.PersonMapper;
 import com.demo.departments.demoDepartments.service.utils.mapping.GraphBuilderMapperService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of PersonService that demonstrates the flexible DTO mapping system
+ * Implementation of PersonService
  */
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -32,45 +32,122 @@ public class PersonServiceImpl implements PersonService {
     private final GraphBuilderMapperService graphBuilderMappingService;
 
     @Override
-    public void deleteById(Long id) {
-     personRepository.deleteById(id);
+    @Transactional(readOnly = true)
+    public Optional<Person> findEntityById(Long id) {
+        return personRepository.findById(id);
     }
 
     @Override
+    public void deleteById(Long id) {
+        personRepository.deleteById(id);
+    }
+
+    /**
+     * Find a person by ID with full data based on requested attributes
+     * This is the only method that uses entity graphs for dynamic attribute loading
+     */
+    @Override
     @Transactional(readOnly = true)
-    public PersonDTO findByIdFull(Long id, Map<String, String> params) {
-        Set<String> dtoFields = parse(params.get("dto_fields"));
-        Set<String> graphFields = parse(params.get("graph_fields"));
+    public PersonDTO findByIdFull(Long id, List<String> attributes) {
+        // Convert list to set for faster lookups
+        Set<String> attributeSet = attributes != null ? new HashSet<>(attributes) : Collections.emptySet();
+        
+        // If no attributes specified, return basic mapping
+        if (attributeSet.isEmpty()) {
+            return findById(id, MappingLevel.BASIC);
+        }
+        
+        // Generate entity graph based on requested attributes
+        EntityGraph graph = graphBuilderMappingService.getGraphWithAttributes(Person.class, attributeSet);
 
-        EntityGraph graph = graphBuilderMappingService.getGraphWithAttributes(Person.class, graphFields);
+        // Fetch entity with the dynamic attribute-based graph
         Person person = personRepository.findById(id, graph)
-                .orElseThrow(() -> new RuntimeException("Person not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
 
+        // Create mapping options that include only requested attributes
         MappingOptions options = MappingOptions.builder()
-                .fields(dtoFields)
+                .fields(attributeSet)
+                .level(MappingLevel.COMPLETE) // Complete level but only for requested fields
                 .build();
 
-        return personMapper.toDto(person, options);
+        // Map entity to DTO with options
+        return personMapper.toDtoWithOptions(person, options);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Find a person by ID with level-based mapping
+     * No entity graphs used here - just fetch the entity and apply the appropriate mapping level
+     */
     @Override
-    public Optional<Person> findByFull(){
-        EntityGraph  entityGraph = DynamicEntityGraph.fetching().addPath("addresses").addPath("contacts").build();
-        Optional<Person> byId = personRepository.findById(1L);
-        return byId;
-    }
-
     @Transactional(readOnly = true)
-    @Override
-    public Optional<Person> findById(Long id) {
-        return personRepository.findById(1L);
+    public PersonDTO findById(Long id, MappingLevel level) {
+        // Simple entity fetch without any graph
+        Person person = personRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
+        
+        // Create mapping options with level
+        MappingOptions options = MappingOptions.builder()
+                .level(level)
+                .build();
+        
+        // Map entity to DTO with level-based options
+        return personMapper.toDtoWithOptions(person, options);
     }
 
-    private Set<String> parse(String paramValue) {
-        if (paramValue == null || paramValue.isBlank()) return Set.of();
-        return Arrays.stream(paramValue.split(","))
-                .map(String::trim)
-                .collect(Collectors.toSet());
+    /**
+     * Find all persons with level-based mapping
+     * No entity graphs used here - just fetch entities and apply the appropriate mapping level
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<PersonDTO> findAll(MappingLevel level) {
+        // Simple entities fetch without any graph
+        List<Person> persons = personRepository.findAll();
+        
+        // Create mapping options with level
+        MappingOptions options = MappingOptions.builder()
+                .level(level)
+                .build();
+        
+        // Map entities to DTOs with level-based options
+        return persons.stream()
+                .map(person -> personMapper.toDtoWithOptions(person, options))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Save a new or update an existing person
+     */
+    @Override
+    @Transactional
+    public PersonDTO save(PersonDTO personDTO) {
+        // Convert DTO to entity
+        Person person = personMapper.toEntity(personDTO);
+        
+        // Save entity
+        person = personRepository.save(person);
+        
+        // Return mapped entity as DTO
+        return personMapper.toDto(person);
+    }
+
+    /**
+     * Partially update a person
+     */
+    @Override
+    @Transactional
+    public PersonDTO update(Long id, PersonDTO personDTO) {
+        // Find existing entity
+        Person person = personRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
+        
+        // Update entity with DTO, ignoring null values
+        personMapper.partialUpdate(person, personDTO);
+        
+        // Save updated entity
+        person = personRepository.save(person);
+        
+        // Return mapped entity as DTO
+        return personMapper.toDto(person);
     }
 }

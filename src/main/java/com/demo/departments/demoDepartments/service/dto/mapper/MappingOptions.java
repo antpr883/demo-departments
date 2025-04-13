@@ -1,6 +1,5 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
-import com.demo.departments.demoDepartments.service.dto.MappingLevel;
 import lombok.*;
 
 import java.util.Set;

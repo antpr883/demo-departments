@@ -1,32 +1,46 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
-import com.demo.departments.demoDepartments.service.dto.AddressDTO;
 import com.demo.departments.demoDepartments.persistence.model.Address;
+import com.demo.departments.demoDepartments.persistence.model.Person;
+import com.demo.departments.demoDepartments.service.dto.AddressDTO;
 import org.mapstruct.*;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+/**
+ * MapStruct-based mapper for Address entity
+ */
+@Mapper(componentModel = "spring", uses = {MapperUtils.class}, config = MapStructConfig.class)
+public interface AddressMapper extends EntityMapper<AddressDTO, Address> {
 
-@Mapper(config = CommonMapperConfig.class)
-public interface AddressMapper {
+    @Override
+    @Named("toDto")
+    @Mapping(target = "personId", source = "person.id")
+    AddressDTO toDto(Address entity);
 
-    @Mapping(target = "id", expression = "java(entity.getId())")
-    @Mapping(target = "country", expression = "java(options.isBasicOrAbove() ? entity.getCountry() : null)")
-    @Mapping(target = "city", expression = "java(options.isBasicOrAbove() ? entity.getCity() : null)")
-    @Mapping(target = "street", expression = "java(options.isBasicOrAbove() ? entity.getStreet() : null)")
-    @Mapping(target = "createdBy", expression = "java(options.isComplete() ? entity.getCreatedBy() : null)")
-    @Mapping(target = "createdDate", expression = "java(options.isComplete() ? entity.getCreatedDate() : null)")
-    AddressDTO toDto(Address entity, @Context MappingOptions options);
+    @Override
+    @Mapping(target = "person", ignore = true)
+    Address toEntity(AddressDTO dto);
 
-    @InheritInverseConfiguration
+    @Override
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Address toEntity(AddressDTO dto, @Context MappingOptions options);
+    @Mapping(target = "person", ignore = true)
+    void partialUpdate(@MappingTarget Address entity, AddressDTO dto);
 
-    default Set<AddressDTO> toDtoSet(Set<Address> entities, @Context MappingOptions options) {
-        return entities == null ? null : entities.stream().map(e -> toDto(e, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Maps address with options to control property inclusion
+     */
+    @Named("toDtoWithOptions")
+    @Mapping(target = "personId", source = "person.id", 
+            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(address, Person.class))")
+    AddressDTO toDtoWithOptions(Address address, @Context MappingOptions options);
 
-    default Set<Address> toEntitySet(Set<AddressDTO> dtos, @Context MappingOptions options) {
-        return dtos == null ? null : dtos.stream().map(d -> toEntity(d, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Simplified DTO with minimal fields for list views
+     */
+    @Named("toSimpleDto")
+    @Mapping(target = "personId", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "modifiedDate", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "modifiedBy", ignore = true)
+    AddressDTO toSimpleDto(Address address);
 }

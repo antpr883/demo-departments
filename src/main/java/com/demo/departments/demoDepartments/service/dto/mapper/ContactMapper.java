@@ -1,43 +1,46 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
-import com.demo.departments.demoDepartments.service.dto.ContactDTO;
 import com.demo.departments.demoDepartments.persistence.model.Contact;
+import com.demo.departments.demoDepartments.persistence.model.Person;
+import com.demo.departments.demoDepartments.service.dto.ContactDTO;
 import org.mapstruct.*;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
- * Mapper interface for converting between Contact entity and its DTOs
+ * MapStruct-based mapper for Contact entity
  */
-@Mapper(config = CommonMapperConfig.class)
-public interface ContactMapper {
+@Mapper(componentModel = "spring", uses = {MapperUtils.class}, config = MapStructConfig.class)
+public interface ContactMapper extends EntityMapper<ContactDTO, Contact> {
 
-    @Mapping(target = "id", expression = "java(options.includes(\"contacts\") ? entity.getId() : null)")
-    @Mapping(target = "contactType", expression = "java(options.includes(\"contacts\") ? entity.getContactType() : null)")
-    @Mapping(target = "phoneNumber", expression = "java(options.includes(\"contacts\") ? entity.getPhoneNumber() : null)")
-    @Mapping(target = "email", expression = "java(options.includes(\"contacts\") ? entity.getEmail() : null)")
-    @Mapping(target = "personId", ignore = true)
-    @Mapping(target = "createdBy", expression = "java(options.includes(\"contacts\") ? entity.getCreatedBy() : null)")
-    @Mapping(target = "createdDate", expression = "java(options.includes(\"contacts\") ? entity.getCreatedDate() : null)")
-    @Mapping(target = "modifiedBy", expression = "java(options.includes(\"contacts\") ? entity.getModifiedBy() : null)")
-    @Mapping(target = "modifiedDate", expression = "java(options.includes(\"contacts\") ? entity.getModifiedDate() : null)")
-    ContactDTO toDto(Contact entity, @Context MappingOptions options);
+    @Override
+    @Named("toDto")
+    @Mapping(target = "personId", source = "person.id")
+    ContactDTO toDto(Contact entity);
 
-    @InheritInverseConfiguration
+    @Override
+    @Mapping(target = "person", ignore = true)
+    Contact toEntity(ContactDTO dto);
+
+    @Override
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Contact toEntity(ContactDTO dto, @Context MappingOptions options);
-
-    @Named("partialUpdate")
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "person", ignore = true)
     void partialUpdate(@MappingTarget Contact entity, ContactDTO dto);
 
-    default Set<ContactDTO> toDtoSet(Set<Contact> entities, @Context MappingOptions options) {
-        return entities == null ? null : entities.stream().map(e -> toDto(e, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Maps contact with options to control property inclusion
+     */
+    @Named("toDtoWithOptions")
+    @Mapping(target = "personId", source = "person.id", 
+            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(contact, Person.class))")
+    ContactDTO toDtoWithOptions(Contact contact, @Context MappingOptions options);
 
-    default Set<Contact> toEntitySet(Set<ContactDTO> dtos, @Context MappingOptions options) {
-        return dtos == null ? null : dtos.stream().map(d -> toEntity(d, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Simplified DTO with minimal fields for list views
+     */
+    @Named("toSimpleDto") 
+    @Mapping(target = "personId", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "modifiedDate", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "modifiedBy", ignore = true)
+    ContactDTO toSimpleDto(Contact contact);
 }

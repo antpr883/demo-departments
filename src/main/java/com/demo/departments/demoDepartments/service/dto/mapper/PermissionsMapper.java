@@ -1,43 +1,47 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
-import com.demo.departments.demoDepartments.service.dto.security.PermissionsDTO;
+import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.model.security.Permissions;
-import com.demo.departments.demoDepartments.persistence.repository.RoleRepository;
+import com.demo.departments.demoDepartments.persistence.model.security.Role;
+import com.demo.departments.demoDepartments.service.dto.security.PermissionsDTO;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * Mapper for converting between Permissions entity and its DTOs
+ * MapStruct-based mapper for Permissions entity
  */
-@Mapper(config = CommonMapperConfig.class)
-public interface PermissionsMapper {
+@Mapper(componentModel = "spring", uses = {MapperUtils.class}, config = MapStructConfig.class)
+public interface PermissionsMapper extends EntityMapper<PermissionsDTO, Permissions> {
 
-   @Mapping(target = "id", expression = "java(options.includes(\"permissions\") ? entity.getId() : null)")
-    @Mapping(target = "permission", expression = "java(options.includes(\"permissions\") ? entity.getPermission() : null)")
-    @Mapping(target = "roleId", ignore = true)
-    @Mapping(target = "createdBy", expression = "java(options.includes(\"permissions\") ? entity.getCreatedBy() : null)")
-    @Mapping(target = "createdDate", expression = "java(options.includes(\"permissions\") ? entity.getCreatedDate() : null)")
-    @Mapping(target = "modifiedBy", expression = "java(options.includes(\"permissions\") ? entity.getModifiedBy() : null)")
-    @Mapping(target = "modifiedDate", expression = "java(options.includes(\"permissions\") ? entity.getModifiedDate() : null)")
-    PermissionsDTO toDto(Permissions entity, @Context MappingOptions options);
+    @Override
+    @Named("toDto")
+    @Mapping(target = "roleId", source = "role.id")
+    PermissionsDTO toDto(Permissions entity);
 
-    @InheritInverseConfiguration
+    @Override
+    @Mapping(target = "role", ignore = true)
+    Permissions toEntity(PermissionsDTO dto);
+
+    @Override
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Permissions toEntity(PermissionsDTO dto, @Context MappingOptions options);
-
-    @Named("partialUpdate")
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "role", ignore = true)
     void partialUpdate(@MappingTarget Permissions entity, PermissionsDTO dto);
 
-    default Set<PermissionsDTO> toDtoSet(Set<Permissions> entities, @Context MappingOptions options) {
-        return entities == null ? null : entities.stream().map(e -> toDto(e, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Maps permissions with options to control property inclusion
+     */
+    @Named("toDtoWithOptions")
+    @Mapping(target = "roleId", source = "role.id",
+            conditionExpression = "java(options.levelOrIncludes(\"roleId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(permissions, Role.class) || MapperUtils.hasAncestorOfType(permissions, Person.class))")
+    PermissionsDTO toDtoWithOptions(Permissions permissions, @Context MappingOptions options);
 
-    default Set<Permissions> toEntitySet(Set<PermissionsDTO> dtos, @Context MappingOptions options) {
-        return dtos == null ? null : dtos.stream().map(d -> toEntity(d, options)).collect(Collectors.toSet());
-    }
+    /**
+     * Simplified DTO with minimal fields for list views
+     */
+    @Named("toSimpleDto")
+    @Mapping(target = "roleId", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "modifiedDate", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "modifiedBy", ignore = true)
+    PermissionsDTO toSimpleDto(Permissions permissions);
 }
