@@ -45,6 +45,7 @@ public class PersonServiceImpl implements PersonService {
     /**
      * Find a person by ID with full data based on requested attributes
      * This is the only method that uses entity graphs for dynamic attribute loading
+     * If no attributes specified, returns all attributes (COMPLETE level)
      */
     @Override
     @Transactional(readOnly = true)
@@ -52,23 +53,34 @@ public class PersonServiceImpl implements PersonService {
         // Convert list to set for faster lookups
         Set<String> attributeSet = attributes != null ? new HashSet<>(attributes) : Collections.emptySet();
         
-        // If no attributes specified, return basic mapping
+        // Generate appropriate entity graph
+        EntityGraph graph;
         if (attributeSet.isEmpty()) {
-            return findById(id, MappingLevel.BASIC);
+            // If no attributes specified, get full entity graph
+            graph = graphBuilderMappingService.getCompleteEntityGraph(Person.class);
+        } else {
+            // Otherwise get graph just for requested attributes
+            graph = graphBuilderMappingService.getGraphWithAttributes(Person.class, attributeSet);
         }
-        
-        // Generate entity graph based on requested attributes
-        EntityGraph graph = graphBuilderMappingService.getGraphWithAttributes(Person.class, attributeSet);
 
-        // Fetch entity with the dynamic attribute-based graph
+        // Fetch entity with the dynamic graph
         Person person = personRepository.findById(id, graph)
                 .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + id));
 
-        // Create mapping options that include only requested attributes
-        MappingOptions options = MappingOptions.builder()
-                .fields(attributeSet)
-                .level(MappingLevel.COMPLETE) // Complete level but only for requested fields
-                .build();
+        // Create mapping options
+        MappingOptions options;
+        if (attributeSet.isEmpty()) {
+            // If no attributes specified, return complete mapping
+            options = MappingOptions.builder()
+                    .level(MappingLevel.COMPLETE)
+                    .build();
+        } else {
+            // Otherwise return only requested attributes with COMPLETE level
+            options = MappingOptions.builder()
+                    .fields(attributeSet)
+                    .level(MappingLevel.SUMMARY) // Use SUMMARY level for attribute-based mapping
+                    .build();
+        }
 
         // Map entity to DTO with options
         return personMapper.toDtoWithOptions(person, options);

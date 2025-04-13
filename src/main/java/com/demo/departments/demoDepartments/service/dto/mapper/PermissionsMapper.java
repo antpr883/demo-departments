@@ -31,7 +31,7 @@ public interface PermissionsMapper extends EntityMapper<PermissionsDTO, Permissi
      */
     @Named("toDtoWithOptions")
     @Mapping(target = "roleId", source = "role.id",
-            conditionExpression = "java(options.levelOrIncludes(\"roleId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(permissions, Role.class) || MapperUtils.hasAncestorOfType(permissions, Person.class))")
+            conditionExpression = "java(options.levelOrIncludes(\"roleId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(permissions, Role.class) || MapperUtils.hasAncestorOfType(permissions, Person.class))")
     PermissionsDTO toDtoWithOptions(Permissions permissions, @Context MappingOptions options);
 
     /**

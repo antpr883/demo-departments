@@ -13,29 +13,37 @@ This project implements a simple but effective entity-to-DTO mapping system with
 
 The standard approach uses predefined mapping levels without entity graphs:
 
-- **MINIMAL**: Just entity fields, no relationships
-- **BASIC**: Entity fields plus IDs of related entities
-- **SUMMARY**: Entity fields plus basic fields from related entities
-- **COMPLETE**: Full entity representation
+- **MINIMAL**: Only entity fields without BaseDTO fields, no associations
+- **BASIC**: MINIMAL + BaseDTO fields (id, audit fields, etc.)
+- **SUMMARY**: BASIC + IDs of related entities
+- **COMPLETE**: Full entity representation with nested associations
 
 This works with already loaded entities (no special fetching):
 
 ```java
-// Basic person data
+// Minimal person data (just business fields)
+PersonDTO minimalPerson = personService.findById(1L, MappingLevel.MINIMAL);
+
+// Basic person data (with audit fields)
 PersonDTO basicPerson = personService.findById(1L, MappingLevel.BASIC);
+
+// Summary person data (with related entity IDs)
+PersonDTO summaryPerson = personService.findById(1L, MappingLevel.SUMMARY);
 
 // Complete person data (still fetches only the person entity)
 PersonDTO completePerson = personService.findById(1L, MappingLevel.COMPLETE);
-
-// List of persons with summary data
-List<PersonDTO> persons = personService.findAll(MappingLevel.SUMMARY);
 ```
 
 ### 2. Attribute-Based Mapping (With Entity Graphs)
 
-For precise control over which relationships to load and map, use attribute-based mapping:
+For precise control over which relationships to load and map, use attribute-based mapping. If no attributes are specified, all attributes are included by default:
 
 ```java
+// Load all attributes (default behavior)
+PersonDTO fullPerson = personService.findByIdFull(1L, null);
+// OR
+PersonDTO fullPerson = personService.findByIdFull(1L, Collections.emptyList());
+
 // Only load addresses (uses entity graph to fetch them)
 List<String> justAddresses = List.of("addresses");
 PersonDTO personWithAddresses = personService.findByIdFull(1L, justAddresses);

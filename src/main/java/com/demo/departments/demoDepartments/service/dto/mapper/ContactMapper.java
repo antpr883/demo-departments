@@ -30,7 +30,7 @@ public interface ContactMapper extends EntityMapper<ContactDTO, Contact> {
      */
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id", 
-            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(contact, Person.class))")
+            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(contact, Person.class))")
     ContactDTO toDtoWithOptions(Contact contact, @Context MappingOptions options);
 
     /**

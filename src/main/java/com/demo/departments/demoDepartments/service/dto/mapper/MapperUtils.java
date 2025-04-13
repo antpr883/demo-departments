@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,9 +29,9 @@ public class MapperUtils {
             return Collections.emptySet();
         }
         return entities.stream()
-                .filter(e -> e != null)
+                .filter(Objects::nonNull)
                 .map(PersistenceModel::getId)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 

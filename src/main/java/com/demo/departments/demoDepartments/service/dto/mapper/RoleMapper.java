@@ -34,7 +34,7 @@ public interface RoleMapper extends EntityMapper<RoleDTO, Role> {
      */
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id",
-            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(role, Person.class))")
+            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(role, Person.class))")
     @Mapping(target = "permissions", source = "permissions", qualifiedByName = "toDtoWithOptions",
             conditionExpression = "java(options.levelOrIncludes(\"permissions\", MappingLevel.COMPLETE))")
     @Mapping(target = "permissionIds", ignore = true)
@@ -45,7 +45,7 @@ public interface RoleMapper extends EntityMapper<RoleDTO, Role> {
      */
     @AfterMapping
     default void processPermissionIdsBasedOnOptions(@MappingTarget RoleDTO dto, Role role, @Context MappingOptions options) {
-        if (options.isBasicOrAbove() && role.getPermissions() != null) {
+        if (options.isSummaryOrAbove() && role.getPermissions() != null) {
             dto.setPermissionIds(MapperUtils.extractIds(role.getPermissions()));
         }
     }

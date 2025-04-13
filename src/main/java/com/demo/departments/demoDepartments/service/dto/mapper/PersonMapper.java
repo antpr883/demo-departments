@@ -47,8 +47,8 @@ public interface PersonMapper extends GenericMapper<Person, PersonDTO, PersonSum
      */
     @AfterMapping
     default void processIdsBasedOnOptions(@MappingTarget PersonDTO dto, Person person, @Context MappingOptions options) {
-        // Only include IDs when BASIC or above
-        if (options.isBasicOrAbove()) {
+        // Only include IDs when SUMMARY or above
+        if (options.isSummaryOrAbove()) {
             dto.setAddressIds(MapperUtils.extractIds(person.getAddresses()));
             dto.setContactIds(MapperUtils.extractIds(person.getContacts()));
             dto.setRoleIds(MapperUtils.extractIds(person.getRoles()));

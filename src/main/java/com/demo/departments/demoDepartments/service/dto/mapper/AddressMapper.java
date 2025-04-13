@@ -30,7 +30,7 @@ public interface AddressMapper extends EntityMapper<AddressDTO, Address> {
      */
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id", 
-            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.BASIC) || MapperUtils.hasAncestorOfType(address, Person.class))")
+            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(address, Person.class))")
     AddressDTO toDtoWithOptions(Address address, @Context MappingOptions options);
 
     /**
