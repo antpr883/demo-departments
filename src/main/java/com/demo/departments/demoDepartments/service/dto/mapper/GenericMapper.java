@@ -2,8 +2,10 @@ package com.demo.departments.demoDepartments.service.dto.mapper;
 
 import org.mapstruct.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Base mapper interface with advanced mapping options for flexible DTO mapping
@@ -44,6 +46,31 @@ public interface GenericMapper<E, D, S> {
     List<S> toSummaryDtoList(List<E> entities);
 
     /**
+     * Maps entity list to DTO list with options
+     */
+    @Named("toDtoListWithOptions")
+    default List<D> toDtoListWithOptions(List<E> entities, @Context MappingOptions options) {
+        if (entities == null) return Collections.emptyList();
+        return entities.stream()
+                .map(entity -> toDtoWithOptions(entity, options))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Maps entity list to DTO list by level
+     */
+    @Named("toDtoListByLevel")
+    default List<D> toDtoListByLevel(List<E> entities, MappingLevel level) {
+        if (entities == null) return Collections.emptyList();
+        
+        MappingOptions options = MappingOptions.builder()
+                .level(level)
+                .build();
+                
+        return toDtoListWithOptions(entities, options);
+    }
+
+    /**
      * Maps entity set to full DTO set
      */
     Set<D> toDtoSet(Set<E> entities);
@@ -52,6 +79,31 @@ public interface GenericMapper<E, D, S> {
      * Maps entity set to summary DTO set
      */
     Set<S> toSummaryDtoSet(Set<E> entities);
+    
+    /**
+     * Maps entity set to DTO set with options
+     */
+    @Named("toDtoSetWithOptions")
+    default Set<D> toDtoSetWithOptions(Set<E> entities, @Context MappingOptions options) {
+        if (entities == null) return Collections.emptySet();
+        return entities.stream()
+                .map(entity -> toDtoWithOptions(entity, options))
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Maps entity set to DTO set by level
+     */
+    @Named("toDtoSetByLevel")
+    default Set<D> toDtoSetByLevel(Set<E> entities, MappingLevel level) {
+        if (entities == null) return Collections.emptySet();
+        
+        MappingOptions options = MappingOptions.builder()
+                .level(level)
+                .build();
+                
+        return toDtoSetWithOptions(entities, options);
+    }
 
     /**
      * Maps entity to DTO based on mapping level

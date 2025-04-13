@@ -7,6 +7,8 @@ This project implements a simple but effective entity-to-DTO mapping system with
 1. **Level-based mapping** - Standard mapping using predefined levels
 2. **Attribute-based mapping** - Dynamic, precise control with entity graphs
 
+Both approaches are available for both single entity and collection mapping operations.
+
 ## Two Mapping Approaches
 
 ### 1. Level-Based Mapping (No Entity Graphs)
@@ -21,17 +23,17 @@ The standard approach uses predefined mapping levels without entity graphs:
 This works with already loaded entities (no special fetching):
 
 ```java
-// Minimal person data (just business fields)
+// Single entity with different levels
 PersonDTO minimalPerson = personService.findById(1L, MappingLevel.MINIMAL);
-
-// Basic person data (with audit fields)
 PersonDTO basicPerson = personService.findById(1L, MappingLevel.BASIC);
-
-// Summary person data (with related entity IDs)
 PersonDTO summaryPerson = personService.findById(1L, MappingLevel.SUMMARY);
-
-// Complete person data (still fetches only the person entity)
 PersonDTO completePerson = personService.findById(1L, MappingLevel.COMPLETE);
+
+// Collections with different levels
+List<PersonDTO> minimalPersons = personService.findAll(MappingLevel.MINIMAL);
+List<PersonDTO> basicPersons = personService.findAll(MappingLevel.BASIC);
+List<PersonDTO> summaryPersons = personService.findAll(MappingLevel.SUMMARY);
+List<PersonDTO> completePersons = personService.findAll(MappingLevel.COMPLETE);
 ```
 
 ### 2. Attribute-Based Mapping (With Entity Graphs)
@@ -39,22 +41,40 @@ PersonDTO completePerson = personService.findById(1L, MappingLevel.COMPLETE);
 For precise control over which relationships to load and map, use attribute-based mapping. If no attributes are specified, all attributes are included by default:
 
 ```java
-// Load all attributes (default behavior)
+// Single entity with different attribute sets
 PersonDTO fullPerson = personService.findByIdFull(1L, null);
-// OR
-PersonDTO fullPerson = personService.findByIdFull(1L, Collections.emptyList());
+PersonDTO personWithAddresses = personService.findByIdFull(1L, List.of("addresses"));
+PersonDTO personWithSecurity = personService.findByIdFull(1L, List.of("roles.permissions"));
+PersonDTO customPerson = personService.findByIdFull(1L, List.of("addresses", "contacts", "roles"));
 
-// Only load addresses (uses entity graph to fetch them)
-List<String> justAddresses = List.of("addresses");
-PersonDTO personWithAddresses = personService.findByIdFull(1L, justAddresses);
+// Collections with different attribute sets
+List<PersonDTO> allPersons = personService.findAllFull(null);
+List<PersonDTO> personsWithAddresses = personService.findAllFull(List.of("addresses"));
+List<PersonDTO> personsWithSecurity = personService.findAllFull(List.of("roles.permissions"));
+List<PersonDTO> customPersons = personService.findAllFull(List.of("addresses", "contacts", "roles"));
+```
 
-// Load nested relationships (uses entity graph to fetch the relationship chain)
-List<String> securityInfo = List.of("roles.permissions");
-PersonDTO personWithSecurity = personService.findByIdFull(1L, securityInfo);
+## Mapper Architecture
 
-// Load multiple specific relationships
-List<String> customAttributes = List.of("addresses", "contacts", "roles.permissions");
-PersonDTO customPerson = personService.findByIdFull(1L, customAttributes);
+The system is built around a layered structure of mapping interfaces:
+
+1. **EntityMapper**: Base mapping interface for simple DTOs
+2. **GenericMapper**: Extended interface with level and option-based mapping
+3. **Entity-specific mappers**: Concrete implementations for Person, Address, etc.
+
+Collection mapping is fully supported:
+
+```java
+// Collection mapping methods in GenericMapper
+List<D> toDtoList(List<E> entities);
+List<S> toSummaryDtoList(List<E> entities);
+List<D> toDtoListWithOptions(List<E> entities, @Context MappingOptions options);
+List<D> toDtoListByLevel(List<E> entities, MappingLevel level);
+
+Set<D> toDtoSet(Set<E> entities);
+Set<S> toSummaryDtoSet(Set<E> entities);
+Set<D> toDtoSetWithOptions(Set<E> entities, @Context MappingOptions options);
+Set<D> toDtoSetByLevel(Set<E> entities, MappingLevel level);
 ```
 
 ## Key Differences
@@ -72,62 +92,129 @@ PersonDTO customPerson = personService.findByIdFull(1L, customAttributes);
 ### Level-Based Mapping
 
 ```java
-public PersonDTO findById(Long id, MappingLevel level) {
+// Single entity mapping
+public D findById(Long id, MappingLevel level) {
     // Simple fetch without graph
-    Person person = personRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Person not found"));
+    E entity = repository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Entity not found"));
     
     // Map according to level
     MappingOptions options = MappingOptions.builder()
             .level(level)
             .build();
     
-    return personMapper.toDtoWithOptions(person, options);
+    return mapper.toDtoWithOptions(entity, options);
+}
+
+// Collection mapping
+public List<D> findAll(MappingLevel level) {
+    // Simple fetch without graph
+    List<E> entities = repository.findAll();
+    
+    // Map according to level
+    MappingOptions options = MappingOptions.builder()
+            .level(level)
+            .build();
+    
+    return mapper.toDtoListWithOptions(entities, options);
 }
 ```
 
 ### Attribute-Based Mapping
 
 ```java
-public PersonDTO findByIdFull(Long id, List<String> attributes) {
-    // Create dynamic entity graph based on attributes
-    EntityGraph graph = graphBuilderMappingService.getGraphWithAttributes(
-            Person.class, attributes);
+// Single entity mapping
+public D findByIdFull(Long id, List<String> attributes) {
+    // Convert list to set for faster lookups
+    Set<String> attributeSet = attributes != null ? new HashSet<>(attributes) : Collections.emptySet();
     
-    // Fetch with the precise graph
-    Person person = personRepository.findById(id, graph)
-            .orElseThrow(() -> new EntityNotFoundException("Person not found"));
+    // Generate appropriate entity graph
+    EntityGraph graph;
+    if (attributeSet.isEmpty()) {
+        // If no attributes specified, get full entity graph
+        graph = graphBuilderService.getCompleteEntityGraph(entityClass);
+    } else {
+        // Otherwise get graph just for requested attributes
+        graph = graphBuilderService.getGraphWithAttributes(entityClass, attributeSet);
+    }
+
+    // Fetch entity with the dynamic graph
+    E entity = repository.findById(id, graph)
+            .orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+
+    // Create mapping options
+    MappingOptions options;
+    if (attributeSet.isEmpty()) {
+        // If no attributes specified, return complete mapping
+        options = MappingOptions.builder()
+                .level(MappingLevel.COMPLETE)
+                .build();
+    } else {
+        // Otherwise return only requested attributes with SUMMARY level
+        options = MappingOptions.builder()
+                .fields(attributeSet)
+                .level(MappingLevel.SUMMARY)
+                .build();
+    }
+
+    // Map entity to DTO with options
+    return mapper.toDtoWithOptions(entity, options);
+}
+
+// Collection mapping
+public List<D> findAllFull(List<String> attributes) {
+    // Similar implementation with entity graph
+    // Fetch entities with the dynamic attribute graph
+    List<E> entities = repository.findAll(graph);
     
-    // Map only requested fields
-    MappingOptions options = MappingOptions.builder()
-            .fields(attributes)
-            .level(MappingLevel.COMPLETE)
-            .build();
-    
-    return personMapper.toDtoWithOptions(person, options);
+    // Map entities to DTOs with options
+    return mapper.toDtoListWithOptions(entities, options);
 }
 ```
 
+## Architecture Overview
+
+The mapping system is built on several layers:
+
+1. **Service Layer**:
+   - `BaseService` - Common interface with level and attribute-based methods
+   - `AbstractBaseService` - Reusable implementation of all mapping methods
+   - Entity-specific services extend this base
+
+2. **Mapper Layer**:
+   - `EntityMapper` - Basic mapping interface with toDto/toEntity methods
+   - `GenericMapper` - Advanced interface with options and collection mapping
+   - Entity-specific mappers with custom mapping logic
+
+3. **Graph Building Layer**:
+   - `GraphBuilderMapperService` - Builds entity graphs from attribute paths
+   - Handles both specific attributes and complete entity relationships
+
 ## Best Practices
 
-1. **For standard use cases**: Use level-based mapping
+1. **For data tables**: Use level-based approach with MINIMAL or BASIC level
    ```java
-   personService.findById(id, MappingLevel.BASIC);
+   // Efficient for displaying many rows
+   List<PersonDTO> tableData = personService.findAll(MappingLevel.MINIMAL);
    ```
 
-2. **For specific relationship needs**: Use attribute-based mapping
+2. **For detail views**: Use attribute-based mapping with the exact fields needed
    ```java
-   personService.findByIdFull(id, List.of("addresses", "roles.permissions"));
+   // Precise loading for entity detail page
+   PersonDTO details = personService.findByIdFull(id, 
+       List.of("addresses", "contacts", "roles.permissions"));
    ```
 
-3. **For performance-critical lists**: Use level-based mapping with MINIMAL or BASIC level
+3. **For autocomplete/dropdowns**: Use SUMMARY level for display and ID reference
    ```java
-   personService.findAll(MappingLevel.BASIC);
+   // Good for selects that show name + ID
+   List<PersonDTO> options = personService.findAll(MappingLevel.SUMMARY);
    ```
 
-4. **For complex UI components**: Use attribute-based mapping with just the needed relations
+4. **For full data export**: Use COMPLETE level or empty attributes list
    ```java
-   personService.findByIdFull(id, List.of("contacts"));
+   // Gets everything in the most efficient way
+   List<PersonDTO> exportData = personService.findAllFull(null);
    ```
 
-This dual approach gives you the simplicity of standard mapping levels while enabling precise control when needed for specific scenarios.
+This comprehensive approach gives you both simplicity and flexibility - standard mapping levels for common scenarios and precise attribute-based loading when you need exact control.

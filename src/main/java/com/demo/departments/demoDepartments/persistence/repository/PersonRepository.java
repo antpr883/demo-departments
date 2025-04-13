@@ -6,10 +6,13 @@ import com.demo.departments.demoDepartments.persistence.model.Person;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PersonRepository extends BaseCustomJpaRepository<Person, Long> , JpaSpecificationExecutor<Person> {
 
-     Optional<Person> findById(Long id , EntityGraph entityGraph);
+     Optional<Person> findById(Long id, EntityGraph entityGraph);
+     
+     List<Person> findAll(EntityGraph entityGraph);
 
 }
