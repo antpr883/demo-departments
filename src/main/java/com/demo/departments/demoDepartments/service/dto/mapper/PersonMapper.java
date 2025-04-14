@@ -2,8 +2,10 @@ package com.demo.departments.demoDepartments.service.dto.mapper;
 
 import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
-import com.demo.departments.demoDepartments.service.dto.PersonSummaryDTO;
+import com.demo.departments.demoDepartments.service.dto.base.BaseDTO;
 import org.mapstruct.*;
+
+import java.util.Collections;
 
 /**
  * MapStruct-based mapper for Person entity
@@ -11,7 +13,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", 
         uses = {AddressMapper.class, ContactMapper.class, RoleMapper.class, MapperUtils.class}, 
         config = MapStructConfig.class)
-public interface PersonMapper extends GenericMapper<Person, PersonDTO, PersonSummaryDTO> {
+public interface PersonMapper extends EntityMapper<Person, PersonDTO> {
 
     @Override
     @Named("toDto")
@@ -21,37 +23,75 @@ public interface PersonMapper extends GenericMapper<Person, PersonDTO, PersonSum
     @Mapping(target = "addresses", source = "addresses", qualifiedByName = "toDto")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "toDto")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "toDto")
-    PersonDTO toDto(Person person);
-
-    @Override
-    @Named("toSummaryDto")
     @Mapping(target = "addressCount", expression = "java(MapperUtils.safeCount(person.getAddresses()))")
     @Mapping(target = "contactCount", expression = "java(MapperUtils.safeCount(person.getContacts()))")
     @Mapping(target = "roleCount", expression = "java(MapperUtils.safeCount(person.getRoles()))")
-    @Mapping(target = "birthday", source = "birthDay")
-    PersonSummaryDTO toSummaryDto(Person person);
+    PersonDTO toDto(Person person);
 
     @Override
     @Named("toDtoWithOptions")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "addresses", source = "addresses", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.levelOrIncludes(\"addresses\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"addresses\", MappingLevel.COMPLETE))")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.levelOrIncludes(\"contacts\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"contacts\", MappingLevel.COMPLETE))")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.levelOrIncludes(\"roles\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"roles\", MappingLevel.COMPLETE))")
+    @Mapping(target = "password", source = "password",
+            conditionExpression = "java(options.isCompleteOrAbove())")
     PersonDTO toDtoWithOptions(Person person, @Context MappingOptions options);
 
     /**
-     * Special method to extract IDs based on options
+     * Special method to process DTO based on mapping options
      */
     @AfterMapping
-    default void processIdsBasedOnOptions(@MappingTarget PersonDTO dto, Person person, @Context MappingOptions options) {
-        // Only include IDs when SUMMARY or above
+    default void processFieldsBasedOnOptions(@MappingTarget PersonDTO dto, Person person, @Context MappingOptions options) {
+        // Handle BaseDTO fields - only include for BASIC level or above
+        if (!options.isBasicOrAbove()) {
+            // For MINIMAL level, clear all BaseDTO fields except ID
+            Long id = dto.getId(); // Save the ID
+            dto.setCreatedDate(null);
+            dto.setModifiedDate(null);
+            dto.setCreatedBy(null);
+            dto.setModifiedBy(null);
+            dto.setId(id); // Restore the ID
+        }
+        
+        // Handle password field - only include for COMPLETE level
+        if (!options.isCompleteOrAbove()) {
+            dto.setPassword(null);
+        }
+        
+        // Handle collection IDs and counts - only for SUMMARY or above
         if (options.isSummaryOrAbove()) {
-            dto.setAddressIds(MapperUtils.extractIds(person.getAddresses()));
-            dto.setContactIds(MapperUtils.extractIds(person.getContacts()));
-            dto.setRoleIds(MapperUtils.extractIds(person.getRoles()));
+            if (person.getAddresses() != null && !person.getAddresses().isEmpty()) {
+                dto.setAddressIds(MapperUtils.extractIds(person.getAddresses()));
+                dto.setAddressCount(person.getAddresses().size());
+            }
+            
+            if (person.getContacts() != null && !person.getContacts().isEmpty()) {
+                dto.setContactIds(MapperUtils.extractIds(person.getContacts()));
+                dto.setContactCount(person.getContacts().size());
+            }
+            
+            if (person.getRoles() != null && !person.getRoles().isEmpty()) {
+                dto.setRoleIds(MapperUtils.extractIds(person.getRoles()));
+                dto.setRoleCount(person.getRoles().size());
+            }
+        } else {
+            // For MINIMAL and BASIC levels, explicitly set collections to empty
+            dto.setAddresses(Collections.emptySet());
+            dto.setContacts(Collections.emptySet());
+            dto.setRoles(Collections.emptySet());
+            
+            // Clear the IDs and counts
+            dto.setAddressIds(Collections.emptySet());
+            dto.setContactIds(Collections.emptySet());
+            dto.setRoleIds(Collections.emptySet());
+            
+            dto.setAddressCount(0);
+            dto.setContactCount(0);
+            dto.setRoleCount(0);
         }
     }
 

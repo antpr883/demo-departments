@@ -4,7 +4,6 @@ import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.repository.PersonRepository;
 import com.demo.departments.demoDepartments.service.PersonService;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
-import com.demo.departments.demoDepartments.service.dto.PersonSummaryDTO;
 import com.demo.departments.demoDepartments.service.dto.mapper.PersonMapper;
 import com.demo.departments.demoDepartments.service.utils.mapping.GraphBuilderMapperService;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,11 +19,14 @@ import java.util.Optional;
 @Slf4j
 @Service
 @Transactional
-public class PersonServiceImpl extends AbstractBaseService<Person, PersonDTO, PersonSummaryDTO, PersonRepository, PersonMapper> 
-                              implements PersonService {
+public class PersonServiceImpl 
+    extends AbstractBaseService<Person, PersonDTO, PersonRepository, PersonMapper>
+    implements PersonService {
 
-    public PersonServiceImpl(PersonRepository repository, PersonMapper mapper, GraphBuilderMapperService graphBuilderService) {
-        super(repository, mapper, graphBuilderService);
+    public PersonServiceImpl(PersonRepository repository, 
+                             PersonMapper personMapper,
+                             GraphBuilderMapperService graphBuilderService) {
+        super(repository, personMapper, graphBuilderService);
     }
 
     @Override
@@ -33,9 +35,6 @@ public class PersonServiceImpl extends AbstractBaseService<Person, PersonDTO, Pe
         return repository.findById(id);
     }
 
-    /**
-     * Save a new or update an existing person
-     */
     @Override
     @Transactional
     public PersonDTO save(PersonDTO personDTO) {
@@ -49,9 +48,6 @@ public class PersonServiceImpl extends AbstractBaseService<Person, PersonDTO, Pe
         return mapper.toDto(person);
     }
 
-    /**
-     * Partially update a person
-     */
     @Override
     @Transactional
     public PersonDTO update(Long id, PersonDTO personDTO) {

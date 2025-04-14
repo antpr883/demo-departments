@@ -9,7 +9,7 @@ import org.mapstruct.*;
  * MapStruct-based mapper for Contact entity
  */
 @Mapper(componentModel = "spring", uses = {MapperUtils.class}, config = MapStructConfig.class)
-public interface ContactMapper extends EntityMapper<ContactDTO, Contact> {
+public interface ContactMapper extends EntityMapper<Contact, ContactDTO> {
 
     @Override
     @Named("toDto")
@@ -28,10 +28,28 @@ public interface ContactMapper extends EntityMapper<ContactDTO, Contact> {
     /**
      * Maps contact with options to control property inclusion
      */
+    @Override
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id", 
-            conditionExpression = "java(options.levelOrIncludes(\"personId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(contact, Person.class))")
-    ContactDTO toDtoWithOptions(Contact contact, @Context MappingOptions options);
+            conditionExpression = "java(options.isSummaryOrAbove() || MapperUtils.hasAncestorOfType(entity, Person.class))")
+    ContactDTO toDtoWithOptions(Contact entity, @Context MappingOptions options);
+    
+    /**
+     * Process BaseDTO fields based on options
+     */
+    @AfterMapping
+    default void processBaseDtoFields(@MappingTarget ContactDTO dto, Contact entity, @Context MappingOptions options) {
+        // Handle BaseDTO fields - only include for BASIC level or above
+        if (!options.isBasicOrAbove()) {
+            // For MINIMAL level, clear all BaseDTO fields except ID
+            Long id = dto.getId(); // Save the ID
+            dto.setCreatedDate(null);
+            dto.setModifiedDate(null);
+            dto.setCreatedBy(null);
+            dto.setModifiedBy(null);
+            dto.setId(id); // Restore the ID
+        }
+    }
 
     /**
      * Simplified DTO with minimal fields for list views

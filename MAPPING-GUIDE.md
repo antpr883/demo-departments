@@ -17,7 +17,7 @@ The standard approach uses predefined mapping levels without entity graphs:
 
 - **MINIMAL**: Only entity fields without BaseDTO fields, no associations
 - **BASIC**: MINIMAL + BaseDTO fields (id, audit fields, etc.)
-- **SUMMARY**: BASIC + IDs of related entities
+- **SUMMARY**: BASIC + IDs of related entities + count of associations
 - **COMPLETE**: Full entity representation with nested associations
 
 This works with already loaded entities (no special fetching):
@@ -58,23 +58,48 @@ List<PersonDTO> customPersons = personService.findAllFull(List.of("addresses", "
 
 The system is built around a layered structure of mapping interfaces:
 
-1. **EntityMapper**: Base mapping interface for simple DTOs
-2. **GenericMapper**: Extended interface with level and option-based mapping
-3. **Entity-specific mappers**: Concrete implementations for Person, Address, etc.
+1. **EntityMapper**: Base mapping interface for DTOs with option-based mapping
+2. **Entity-specific mappers**: Concrete implementations for Person, Address, etc.
 
 Collection mapping is fully supported:
 
 ```java
-// Collection mapping methods in GenericMapper
+// Collection mapping methods in EntityMapper
 List<D> toDtoList(List<E> entities);
-List<S> toSummaryDtoList(List<E> entities);
 List<D> toDtoListWithOptions(List<E> entities, @Context MappingOptions options);
 List<D> toDtoListByLevel(List<E> entities, MappingLevel level);
 
 Set<D> toDtoSet(Set<E> entities);
-Set<S> toSummaryDtoSet(Set<E> entities);
 Set<D> toDtoSetWithOptions(Set<E> entities, @Context MappingOptions options);
 Set<D> toDtoSetByLevel(Set<E> entities, MappingLevel level);
+```
+
+## Unified DTO Approach
+
+Instead of having separate DTOs for different mapping levels (e.g., PersonDTO and PersonSummaryDTO), we now use a single unified DTO class that adapts to different mapping levels by selectively populating fields:
+
+```java
+public class PersonDTO extends BaseDTO {
+    // Basic fields (always populated)
+    private String firstName;
+    private String lastName;
+    private LocalDate birthDay;
+    
+    // Summary counts (populated at SUMMARY level)
+    private Integer addressCount;
+    private Integer contactCount;
+    private Integer roleCount;
+    
+    // IDs collections (populated at SUMMARY level)
+    private Set<Long> addressIds = new HashSet<>();
+    private Set<Long> contactIds = new HashSet<>();
+    private Set<Long> roleIds = new HashSet<>();
+    
+    // Full collections (populated at COMPLETE level)
+    private Set<AddressDTO> addresses = new HashSet<>();
+    private Set<ContactDTO> contacts = new HashSet<>();
+    private Set<RoleDTO> roles = new HashSet<>();
+}
 ```
 
 ## Key Differences
@@ -182,8 +207,7 @@ The mapping system is built on several layers:
    - Entity-specific services extend this base
 
 2. **Mapper Layer**:
-   - `EntityMapper` - Basic mapping interface with toDto/toEntity methods
-   - `GenericMapper` - Advanced interface with options and collection mapping
+   - `EntityMapper` - Advanced interface with options and collection mapping
    - Entity-specific mappers with custom mapping logic
 
 3. **Graph Building Layer**:

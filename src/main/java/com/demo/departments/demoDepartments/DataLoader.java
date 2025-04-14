@@ -7,8 +7,10 @@ import com.demo.departments.demoDepartments.persistence.model.*;
 import com.demo.departments.demoDepartments.persistence.model.security.Permissions;
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.persistence.repository.*;
-import com.demo.departments.demoDepartments.service.PersonService;
+import com.demo.departments.demoDepartments.service.*;
+import com.demo.departments.demoDepartments.service.dto.ContactDTO;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
+import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import com.demo.departments.demoDepartments.service.impl.PersonServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.annotations.processing.Find;
@@ -27,12 +29,11 @@ import java.util.*;
 @Transactional
 public class DataLoader implements ApplicationRunner {
 
-    private final RoleRepository roleRepository;
-    private final PersonRepository personRepository;
-    private final ContactRepository contactRepository;
-    private final AddressRepository addressRepository;
-    private final PermissionsRepository permissionsRepository;
-   private final PersonService personService;
+    private final PermissionsService permissionsService;
+    private final RoleService roleService;
+    private final ContactService contactService;
+    private final AddressService addressService;
+    private final PersonService personService;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -45,12 +46,14 @@ public class DataLoader implements ApplicationRunner {
 //
 
 
+//        List<String> attributes = List.of("contacts", "roles.permissions", "addresses");
+//        PersonDTO dto = personService.findByIdFull(1L, attributes);
 
-        List<String> attributes =   List.of("contacts" , "roles.permissions","addresses");
-        PersonDTO dto = personService.findByIdFull(1L, attributes);
+        PersonDTO byId1 = personService.findById(1L, MappingLevel.COMPLETE);
+
+
+        ContactDTO byId = contactService.findById(1L, MappingLevel.MINIMAL);
         String a = "";
-
-
 
     }
 

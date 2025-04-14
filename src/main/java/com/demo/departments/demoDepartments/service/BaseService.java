@@ -1,6 +1,5 @@
 package com.demo.departments.demoDepartments.service;
 
-import com.demo.departments.demoDepartments.service.dto.base.BaseDTO;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.List;
  *
  * @param <T> The DTO type
  */
-public interface BaseService<T extends BaseDTO> {
+public interface BaseService<T> {
 
     /**
      * Delete entity by ID

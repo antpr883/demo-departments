@@ -10,7 +10,7 @@ import org.mapstruct.*;
  * MapStruct-based mapper for Permissions entity
  */
 @Mapper(componentModel = "spring", uses = {MapperUtils.class}, config = MapStructConfig.class)
-public interface PermissionsMapper extends EntityMapper<PermissionsDTO, Permissions> {
+public interface PermissionsMapper extends EntityMapper<Permissions, PermissionsDTO> {
 
     @Override
     @Named("toDto")
@@ -29,10 +29,28 @@ public interface PermissionsMapper extends EntityMapper<PermissionsDTO, Permissi
     /**
      * Maps permissions with options to control property inclusion
      */
+    @Override
     @Named("toDtoWithOptions")
     @Mapping(target = "roleId", source = "role.id",
-            conditionExpression = "java(options.levelOrIncludes(\"roleId\", MappingLevel.SUMMARY) || MapperUtils.hasAncestorOfType(permissions, Role.class) || MapperUtils.hasAncestorOfType(permissions, Person.class))")
-    PermissionsDTO toDtoWithOptions(Permissions permissions, @Context MappingOptions options);
+            conditionExpression = "java(options.isSummaryOrAbove() || MapperUtils.hasAncestorOfType(entity, Role.class) || MapperUtils.hasAncestorOfType(entity, Person.class))")
+    PermissionsDTO toDtoWithOptions(Permissions entity, @Context MappingOptions options);
+    
+    /**
+     * Process BaseDTO fields based on options
+     */
+    @AfterMapping
+    default void processBaseDtoFields(@MappingTarget PermissionsDTO dto, Permissions entity, @Context MappingOptions options) {
+        // Handle BaseDTO fields - only include for BASIC level or above
+        if (!options.isBasicOrAbove()) {
+            // For MINIMAL level, clear all BaseDTO fields except ID
+            Long id = dto.getId(); // Save the ID
+            dto.setCreatedDate(null);
+            dto.setModifiedDate(null);
+            dto.setCreatedBy(null);
+            dto.setModifiedBy(null);
+            dto.setId(id); // Restore the ID
+        }
+    }
 
     /**
      * Simplified DTO with minimal fields for list views
