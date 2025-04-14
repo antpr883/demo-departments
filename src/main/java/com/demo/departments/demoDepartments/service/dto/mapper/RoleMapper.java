@@ -1,6 +1,5 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
-import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.service.dto.security.RoleDTO;
 import org.mapstruct.*;

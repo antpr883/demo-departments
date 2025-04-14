@@ -1,7 +1,6 @@
 package com.demo.departments.demoDepartments.service.dto.mapper;
 
 import com.demo.departments.demoDepartments.persistence.model.Address;
-import com.demo.departments.demoDepartments.persistence.model.Person;
 import com.demo.departments.demoDepartments.service.dto.AddressDTO;
 import org.mapstruct.*;
 

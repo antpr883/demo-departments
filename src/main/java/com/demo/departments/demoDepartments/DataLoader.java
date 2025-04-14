@@ -19,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 
 @RequiredArgsConstructor
@@ -48,11 +45,9 @@ public class DataLoader implements ApplicationRunner {
 //
 
 
-        Map<String, String> params = new HashMap<>();
-        params.put("dto_fields", "id,firstName,contacts,roles,addresses");
-        params.put("graph_fields", "contacts,roles.permissions,addresses");
 
-        PersonDTO dto = personService.findByIdFull(1L, params);
+        List<String> attributes =   List.of("contacts" , "roles.permissions","addresses");
+        PersonDTO dto = personService.findByIdFull(1L, attributes);
         String a = "";
 
 

@@ -44,6 +44,14 @@ public interface PersonService extends BaseService<PersonDTO> {
     PersonDTO findByIdFull(Long id, List<String> attributes);
     
     /**
+     * Find all persons with full data based on requested attributes
+     * 
+     * @param attributes List of specific attributes to include
+     * @return List of PersonDTOs with attribute-based mapping
+     */
+    List<PersonDTO> findAllFull(List<String> attributes);
+    
+    /**
      * Save a new or update an existing person
      */
     PersonDTO save(PersonDTO personDTO);
