@@ -30,16 +30,25 @@ public class Contact extends PersistenceModel {
     @JoinColumn(name = "person_id")
     private Person person;
 
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+    
     public void addPerson(Person person) {
         if (person != null) {
             this.person = person;
-            person.getContacts().add(this);
+            if (!person.getContacts().contains(this)) {
+                person.getContacts().add(this);
+            }
         }
     }
 
-    public void removePerson(Person person) {
-        this.person = null;
-        person.getContacts().remove(this);
+    public void removePerson() {
+        if (this.person != null) {
+            Person tempPerson = this.person;
+            this.person = null;
+            tempPerson.getContacts().remove(this);
+        }
     }
 
     public Contact(ContactType contactType, String phoneNumber, String email){

@@ -37,13 +37,21 @@ public class Role extends PersistenceModel {
     @JoinColumn(name = "person_id")
     private Person person;
 
-    public void setPermission(Permissions permission){
+    public void setPermission(Permissions permission) {
         if (permission != null) {
             this.permissions.add(permission);
             permission.setRole(this);
         }
     }
-    public void removePermission(Permissions permission){
+    
+    public void addPermission(Permissions permission) {
+        if (permission != null) {
+            this.permissions.add(permission);
+            permission.setRole(this);
+        }
+    }
+    
+    public void removePermission(Permissions permission) {
         this.permissions.remove(permission);
         permission.setRole(null);
     }

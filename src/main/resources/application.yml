@@ -18,7 +18,7 @@ spring:
       hibernate.type.preferred_instant_jdbc_type: TIMESTAMP
       hibernate.id.new_generator_mappings: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create-drop # Using Hibernate's schema creation for now
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
         implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy

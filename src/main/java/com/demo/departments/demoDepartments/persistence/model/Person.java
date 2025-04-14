@@ -96,25 +96,39 @@ public class Person extends PersistenceModel {
     public void setAddress(Address address) {
         if (address != null) {
             this.addresses.add(address);
-            address.addPerson(this);
+            address.setPerson(this);
+        }
+    }
+    
+    public void addAddress(Address address) {
+        if (address != null) {
+            this.addresses.add(address);
+            address.setPerson(this);
         }
     }
 
     public void removeAddress(Address address){
         this.addresses.remove(address);
-        address.addPerson(null);
+        address.setPerson(null);
     }
 
     public void setContact(Contact contact) {
         if (contact != null) {
             this.contacts.add(contact);
-            contact.addPerson(this);
+            contact.setPerson(this);
+        }
+    }
+    
+    public void addContact(Contact contact) {
+        if (contact != null) {
+            this.contacts.add(contact);
+            contact.setPerson(this);
         }
     }
 
     public void removeContact(Contact contact) {
         this.contacts.remove(contact);
-        contact.addPerson(null);
+        contact.setPerson(null);
     }
 
     public Person(String password, String firstName, String lastName, LocalDate birthDay) {

@@ -36,26 +36,36 @@ public class Address extends PersistenceModel {
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "person_id")
     private Person person;
 
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+    
     public void addPerson(Person person) {
         if (person != null) {
             this.person = person;
-            person.getAddresses().add(this);
+            if (!person.getAddresses().contains(this)) {
+                person.getAddresses().add(this);
+            }
         }
     }
 
-    public void removePerson(Person person) {
-        this.person = null;
-        person.getAddresses().remove(this);
+    public void removePerson() {
+        if (this.person != null) {
+            Person tempPerson = this.person;
+            this.person = null;
+            tempPerson.getAddresses().remove(this);
+        }
     }
 
-    public Address(AddressType type, String street, String postZipCode, String province, String country) {
+    public Address(AddressType type, String street, String postZipCode, String province, String city, String country) {
         this.type = type;
         this.street = street;
         this.postZipCode = postZipCode;
         this.province = province;
+        this.city = city;
         this.country = country;
     }
 }

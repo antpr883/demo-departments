@@ -8,6 +8,12 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+  # Liquibase configuration
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+    default-schema: public
+
   jpa:
     show-sql: true
     open-in-view: false
