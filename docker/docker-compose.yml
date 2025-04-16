@@ -1,0 +1,132 @@
+# Docker Compose configuration for Demo Departments
+services:
+  # Database
+  postgres:
+    image: postgres:16
+    container_name: db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Application
+  app:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      loki:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE},docker
+      SERVER_URL: ${SERVER_URL}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PARAMS: ${DB_PARAMS}
+      LOKI: ${LOKI}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+      MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+      SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES: "true"
+    volumes:
+      - app-logs:/app/logs
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-retries: "5"
+        loki-batch-size: "400"
+        max-size: "10m"
+        max-file: "3"
+        labels: "container_name,service_name"
+
+  # Observability services
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: tempo
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - './config/tempo/tempo.yaml:/etc/tempo.yaml'
+    ports:
+      - '3200:3200'
+      - '9095:9095'
+      - '4317:4317'
+      - '4318:4318'
+      - '9411:9411'
+      - '14268:14268'
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    ports:
+      - '3100:3100'
+    volumes:
+      - './config/loki/local-config.yaml:/etc/loki/local-config.yaml'
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.4
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    volumes:
+      - './config/grafana/provisioning:/etc/grafana/provisioning'
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:v1.93.12
+    container_name: victoria-metrics
+    command: -promscrape.config=/promscrape.yaml -enableTCP6=true
+    volumes:
+      - './config/victoria-metrics/promscrape_docker_compose.yaml:/promscrape.yaml'
+    ports:
+      - '8428:8428'
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  app-logs:
+
+networks:
+  app-network:
+    driver: bridge

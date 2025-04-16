@@ -30,6 +30,19 @@ spring:
 
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
 # OpenAPI Configuration
 springdoc:
   api-docs:
@@ -48,4 +61,6 @@ logging:
   level:
     org.hibernate.SQL: OFF
     com.demo.library: DEBUG
+  file:
+    path: ${LOG_PATH:./logs}
 

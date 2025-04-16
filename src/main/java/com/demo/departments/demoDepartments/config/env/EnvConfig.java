@@ -38,10 +38,10 @@ public class EnvConfig {
                 break;
         }
 
-        // Завантажуємо відповідний .env
+        // Завантажуємо відповідний dev.env
         Dotenv dotenv = Dotenv.configure()
                 .directory(envDirectory)
-                .filename(".env")
+                .filename("dev.env")
                 .ignoreIfMissing()
                 .load();
 

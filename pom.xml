@@ -1,29 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
+	<!-- ===== Parent configuration ===== -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.4</version>
 		<relativePath/>
 	</parent>
+
+	<!-- ===== Project coordinates ===== -->
 	<groupId>com.demo.departments</groupId>
 	<artifactId>demoDepartments</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<description>Demo project for Company Departments</description>
 	<url/>
+
+	<!-- ===== Properties (All versions are defined here) ===== -->
 	<properties>
+		<!-- Java & Lombok -->
 		<java.version>17</java.version>
-		<io.github.cdimascio>3.2.0</io.github.cdimascio>
+		<lombok.version>1.18.30</lombok.version>
+		<!-- Dotenv -->
+		<dotenv.version>5.2.2</dotenv.version>
+		<!-- Spring Data JPA Entity Graph -->
 		<com.cosium.spring.data>3.2.2</com.cosium.spring.data>
+		<!-- Jackson -->
 		<com.fasterxml.jackson.core>2.18.2</com.fasterxml.jackson.core>
+		<!-- MapStruct -->
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
 		<org.mapstruct.processor.version>1.6.3</org.mapstruct.processor.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
+		<!-- Swagger / OpenAPI -->
+		<springdoc.version>2.8.6</springdoc.version>
+		<!-- Monitoring -->
+		<datasource.proxy.version>1.9.2</datasource.proxy.version>
+		<!-- SLF4J LOKI -->
+		<slf4j.version>2.0.17</slf4j.version>
+		<loki.logback.version>1.6.0</loki.logback.version>
+		<logstash.logback.encoder>7.4</logstash.logback.encoder>
+		<io.micrometer>1.14.6</io.micrometer>
+		<!-- Reflections -->
+		<reflections.version>0.10.2</reflections.version>
 	</properties>
 
+	<!-- ===== Dependencies ===== -->
 	<dependencies>
+		<!-- === Core Spring Boot Dependencies === -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -44,26 +70,46 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-logging</artifactId>
 		</dependency>
+
+		<!-- === Metrics & Monitoring === -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>${io.micrometer}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>${io.micrometer}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-observation</artifactId>
+			<version>${io.micrometer}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.gavlyukovskiy</groupId>
+			<artifactId>datasource-proxy-spring-boot-starter</artifactId>
+			<version>${datasource.proxy.version}</version>
+		</dependency>
+
+		<!-- === Database Drivers & Extensions === -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>com.cosium.spring.data</groupId>
 			<artifactId>spring-data-jpa-entity-graph</artifactId>
 			<version>${com.cosium.spring.data}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>${com.fasterxml.jackson.core}</version>
-		</dependency>
+
+		<!-- === Mapping & DTO (MapStruct + Lombok Binding) === -->
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
@@ -72,43 +118,68 @@
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct-processor</artifactId>
-			<version>1.6.3</version>
+			<version>${org.mapstruct.version}</version>
 			<scope>provided</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok-mapstruct-binding</artifactId>
-            <version>${lombok.mapstruct.binding.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok-mapstruct-binding</artifactId>
+			<version>${lombok.mapstruct.binding.version}</version>
+		</dependency>
+
+		<!-- === Serialization / JSON === -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${com.fasterxml.jackson.core}</version>
+		</dependency>
+
+		<!-- === API Documentation (Swagger / OpenAPI) === -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+
+		<!-- === Utility Libraries === -->
+		<!-- Janino for Logback conditional processing -->
+		<dependency>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.loki4j</groupId>
+			<artifactId>loki-logback-appender</artifactId>
+			<version>${loki.logback.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>${logstash.logback.encoder}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>io.github.cdimascio</groupId>
 			<artifactId>java-dotenv</artifactId>
-			<version>5.2.2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.gavlyukovskiy</groupId>
-			<artifactId>datasource-proxy-spring-boot-starter</artifactId>
-			<version>1.9.2</version>
+			<version>${dotenv.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>2.0.17</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
-			<version>0.10.2</version>
+			<version>${reflections.version}</version>
 		</dependency>
-		
-		<\!-- Swagger/OpenAPI dependencies -->
 		<dependency>
-			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.8.6</version>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
 		</dependency>
 
-		<\!-- Test dependencies -->
+		<!-- === Testing Dependencies === -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -125,10 +196,14 @@
 			<scope>test</scope>
 		</dependency>
 
+
+
 	</dependencies>
 
+	<!-- ===== Build Configuration ===== -->
 	<build>
 		<plugins>
+			<!-- Maven Compiler Plugin with annotation processors -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -156,6 +231,8 @@
 					</compilerArgs>
 				</configuration>
 			</plugin>
+
+			<!-- Spring Boot Maven Plugin -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -172,4 +249,3 @@
 	</build>
 
 </project>
-EOF < /dev/null

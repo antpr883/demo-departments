@@ -1,5 +1,6 @@
 package com.demo.departments.demoDepartments;
 
+import com.demo.departments.demoDepartments.config.metrics.MetricsConfig;
 import com.demo.departments.demoDepartments.persistence.model.*;
 import com.demo.departments.demoDepartments.persistence.model.security.Permissions;
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
@@ -7,15 +8,20 @@ import com.demo.departments.demoDepartments.persistence.repository.*;
 import com.demo.departments.demoDepartments.service.*;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,6 +35,12 @@ public class DataLoader implements ApplicationRunner {
     private final AddressService addressService;
     private final PersonService personService;
     private final PersonRepository personRepository;
+    private final ContactRepository contactRepository;
+    private final MetricsConfig metricsConfig;
+    private final MeterRegistry meterRegistry;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // Sample data arrays
     private static final String[] FIRST_NAMES = {"John", "Jane", "Michael", "Emily", "David", "Sarah", "Robert", "Maria", "Daniel", "Olivia"};
@@ -61,19 +73,76 @@ public class DataLoader implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         log.info("Starting data loading...");
         
-        // Create 10 people with all related data
-//        for (int i = 0; i < 10; i++) {
-//            Person person = createPerson(i);
-//            personRepository.save(person);
-//            log.info("Created person: {} {}", person.getFirstName(), person.getLastName());
-//        }
+        // Only load data if the database is empty
+        if (isDatabaseEmpty()) {
+            try {
+                // Create 10 people with all related data
+                for (int i = 0; i < 10; i++) {
+                    Person person = createPerson(i);
+                    personRepository.save(person);
+                    log.info("Created person: {} {}", person.getFirstName(), person.getLastName());
+                }
+                log.info("Data loading completed successfully.");
+                
+                // Update metrics after data loading
+                updateMetricsGauges();
+            } catch (DataIntegrityViolationException e) {
+                log.warn("Data already exists in the database. Skipping data loading. Error: {}", e.getMessage());
+                
+                // Still update metrics for existing data
+                updateMetricsGauges();
+            }
+        } else {
+            log.info("Database already contains data. Skipping data loading.");
+            
+            // Update metrics for existing data
+            updateMetricsGauges();
+        }
         
-        log.info("Data loading completed successfully.");
-        
-        // Verify data was loaded properly by retrieving one person with all details
-        List<String> attributes = List.of("contacts", "roles.permissions", "addresses");
-        PersonDTO dto = personService.findByIdFull(1L, attributes);
-        personService.findById(1L, MappingLevel.COMPLETE);
+        try {
+            // Verify data was loaded properly by retrieving one person with all details
+            List<String> attributes = List.of("contacts", "roles.permissions", "addresses");
+            PersonDTO dto = personService.findByIdFull(1L, attributes);
+            personService.findById(1L, MappingLevel.COMPLETE);
+        } catch (Exception e) {
+            log.warn("Could not verify data: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Check if the database is empty before inserting data
+     * @return true if the database is empty
+     */
+    private boolean isDatabaseEmpty() {
+        TypedQuery<Long> query = entityManager.createQuery("SELECT COUNT(p) FROM Person p", Long.class);
+        Long count = query.getSingleResult();
+        return count == 0;
+    }
+    
+    /**
+     * Check if an email already exists in the database
+     * @param email the email to check
+     * @return true if the email already exists
+     */
+    private boolean emailExists(String email) {
+        TypedQuery<Long> query = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Contact c WHERE c.email = :email", Long.class);
+        query.setParameter("email", email);
+        Long count = query.getSingleResult();
+        return count > 0;
+    }
+    
+    /**
+     * Check if a phone number already exists in the database
+     * @param phoneNumber the phone number to check
+     * @return true if the phone number already exists
+     */
+    private boolean phoneNumberExists(String phoneNumber) {
+        TypedQuery<Long> query = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Contact c WHERE c.phoneNumber = :phoneNumber", Long.class);
+        query.setParameter("phoneNumber", phoneNumber);
+        Long count = query.getSingleResult();
+        return count > 0;
     }
 
     public Person createPerson(int index) {
@@ -96,7 +165,9 @@ public class DataLoader implements ApplicationRunner {
         int numContacts = (index % 2) + 1;
         for (int i = 0; i < numContacts; i++) {
             Contact contact = createContact(person, index, i);
-            person.addContact(contact);
+            if (contact != null) {
+                person.addContact(contact);
+            }
         }
 
         // Create multiple roles for each person (1-2 roles)
@@ -137,10 +208,25 @@ public class DataLoader implements ApplicationRunner {
                       (contactIndex > 0 ? ".work" : "") + 
                       "@example.com";
         
+        // Check if this email already exists in the database
+        if (emailExists(email)) {
+            log.warn("Email {} already exists, skipping this contact", email);
+            return null;
+        }
+        
+        // Generate phone number with variation
+        String phoneNumber = PHONE_NUMBERS[personIndex] + (contactIndex > 0 ? "0" : "");
+        
+        // Check if this phone number already exists in the database
+        if (phoneNumberExists(phoneNumber)) {
+            log.warn("Phone number {} already exists, skipping this contact", phoneNumber);
+            return null;
+        }
+        
         // Create contact with appropriate data
         Contact contact = Contact.builder()
                 .contactType(type)
-                .phoneNumber(PHONE_NUMBERS[personIndex] + (contactIndex > 0 ? "0" : ""))
+                .phoneNumber(phoneNumber)
                 .email(email)
                 .build();
 
@@ -179,5 +265,29 @@ public class DataLoader implements ApplicationRunner {
 
         permission.setRole(role);
         return permission;
+    }
+    
+    /**
+     * Update metrics gauges with current database counts
+     */
+    private void updateMetricsGauges() {
+        try {
+            // Count entities
+            long personCount = entityManager.createQuery("SELECT COUNT(p) FROM Person p", Long.class).getSingleResult();
+            long addressCount = entityManager.createQuery("SELECT COUNT(a) FROM Address a", Long.class).getSingleResult();
+            long contactCount = entityManager.createQuery("SELECT COUNT(c) FROM Contact c", Long.class).getSingleResult();
+            long roleCount = entityManager.createQuery("SELECT COUNT(r) FROM Role r", Long.class).getSingleResult();
+            
+            // Update metrics gauges
+            metricsConfig.getActivePersonsGauge().set((int)personCount);
+            metricsConfig.getActiveAddressesGauge().set((int)addressCount);
+            metricsConfig.getActiveContactsGauge().set((int)contactCount);
+            metricsConfig.getActiveRolesGauge().set((int)roleCount);
+            
+            log.info("Updated metrics gauges - Persons: {}, Addresses: {}, Contacts: {}, Roles: {}", 
+                    personCount, addressCount, contactCount, roleCount);
+        } catch (Exception e) {
+            log.error("Failed to update metrics gauges: {}", e.getMessage(), e);
+        }
     }
 }

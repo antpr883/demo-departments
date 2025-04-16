@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+docker/
+!docker/application-dev.yml
+
+# Maven
+target/*
+!target/demoDepartments-0.0.1-SNAPSHOT.jar
+
+# Logs
+logs/
+*.log
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Temp files
+tmp/
+*.tmp
+*.bak
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Local config
+.env
