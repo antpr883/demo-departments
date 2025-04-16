@@ -17,7 +17,7 @@ public interface RoleMapper extends EntityMapper<Role, RoleDTO> {
     @Named("toDto")
     @Mapping(target = "personId", source = "person.id")
     @Mapping(target = "permissions", source = "permissions", qualifiedByName = "toDto")
-    @Mapping(target = "permissionIds", expression = "java(MapperUtils.extractIds(entity.getPermissions()))")
+    @Mapping(target = "permissionIds", expression = "java(entity.getPermissions() != null ? MapperUtils.extractIds(entity.getPermissions()) : java.util.Collections.emptySet())")
     RoleDTO toDto(Role entity);
 
     @Override
@@ -37,9 +37,9 @@ public interface RoleMapper extends EntityMapper<Role, RoleDTO> {
     @Override
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id",
-            conditionExpression = "java(options.isSummaryOrAbove() || MapperUtils.hasAncestorOfType(entity, Person.class))")
+            conditionExpression = "java(options.includesPath(\"person\") || MapperUtils.hasAncestorOfType(entity, Person.class))")
     @Mapping(target = "permissions", source = "permissions", qualifiedByName = "toDtoWithOptions",
-            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"permissions\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.includesPath(\"permissions\") || MapperUtils.hasPermissionsInNestedPath(options))")
     RoleDTO toDtoWithOptions(Role entity, @Context MappingOptions options);
 
     /**
@@ -47,9 +47,9 @@ public interface RoleMapper extends EntityMapper<Role, RoleDTO> {
      */
     @AfterMapping
     default void processFieldsBasedOnOptions(@MappingTarget RoleDTO dto, Role role, @Context MappingOptions options) {
-        // Handle BaseDTO fields - only include for BASIC level or above
-        if (!options.isBasicOrAbove()) {
-            // For MINIMAL level, clear all BaseDTO fields except ID
+        // Handle BaseDTO fields - only include audit information if requested
+        if (!options.includeAudit()) {
+            // If audit information is not requested, clear all audit fields except ID
             Long id = dto.getId(); // Save the ID
             dto.setCreatedDate(null);
             dto.setModifiedDate(null);
@@ -58,11 +58,19 @@ public interface RoleMapper extends EntityMapper<Role, RoleDTO> {
             dto.setId(id); // Restore the ID
         }
         
-        // Handle permissions collections
-        if (options.isSummaryOrAbove() && role.getPermissions() != null && !role.getPermissions().isEmpty()) {
-            dto.setPermissionIds(MapperUtils.extractIds(role.getPermissions()));
-        } else if (!options.isSummaryOrAbove()) {
-            // For MINIMAL and BASIC levels, explicitly set collections to empty
+        // Handle permissions based on whether they were requested
+        boolean includePermissions = options.includesPath("permissions") || MapperUtils.hasPermissionsInNestedPath(options);
+        
+        if (includePermissions) {
+            // Include permissions if available and requested
+            if (role.getPermissions() != null && !role.getPermissions().isEmpty()) {
+                // Only set the IDs if they haven't been set yet
+                if (dto.getPermissionIds() == null || dto.getPermissionIds().isEmpty()) {
+                    dto.setPermissionIds(MapperUtils.extractIds(role.getPermissions()));
+                }
+            }
+        } else {
+            // If permissions not requested, clear them to avoid extra data transfer
             dto.setPermissions(Collections.emptySet());
             dto.setPermissionIds(Collections.emptySet());
         }

@@ -3,6 +3,9 @@ package com.demo.departments.demoDepartments.service.utils.mapping;
 import com.cosium.spring.data.jpa.entity.graph.domain2.DynamicEntityGraph;
 import com.cosium.spring.data.jpa.entity.graph.domain2.EntityGraph;
 import com.demo.departments.demoDepartments.persistence.utils.mapping.MappingAttribute;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -16,14 +19,49 @@ public class GraphBuilderMapperService {
      * Create an entity graph for the specified attributes
      */
     public EntityGraph getGraphWithAttributes(Class<?> rootClass, Collection<String> attributes) {
-        Set<String> reducedPaths = reduceGraphPaths(attributes);
+        // If no attributes specified, return a minimal graph
+        if (attributes == null || attributes.isEmpty()) {
+            return DynamicEntityGraph.fetching().build();
+        }
+        
+        // Create a builder for our entity graph
         DynamicEntityGraph.Builder builder = DynamicEntityGraph.fetching();
-
-        for (String attributePath : reducedPaths) {
-            addPathIfValid(builder, rootClass, attributePath);
+        
+        // For each attribute path, add it to the graph
+        for (String attributePath : attributes) {
+            // For nested paths like "roles.permissions", we need to add both "roles" and "roles.permissions"
+            String[] segments = attributePath.split("\\.");
+            StringBuilder path = new StringBuilder();
+            
+            for (int i = 0; i < segments.length; i++) {
+                if (i > 0) path.append(".");
+                path.append(segments[i]);
+                
+                addPathIfValid(builder, rootClass, path.toString());
+            }
         }
 
         return builder.build();
+    }
+    
+    /**
+     * Get all fields from a class and its superclasses
+     */
+    private Set<Field> getAllEntityFields(Class<?> clazz) {
+        Set<Field> fields = new HashSet<>();
+        
+        // Get fields from this class
+        for (Field field : clazz.getDeclaredFields()) {
+            fields.add(field);
+        }
+        
+        // Get fields from superclass if it's not Object
+        Class<?> superClass = clazz.getSuperclass();
+        if (superClass != null && superClass != Object.class) {
+            fields.addAll(getAllEntityFields(superClass));
+        }
+        
+        return fields;
     }
     
     /**

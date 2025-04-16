@@ -2,10 +2,10 @@ package com.demo.departments.demoDepartments.service;
 
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.service.dto.security.RoleDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service interface for Role entity operations
@@ -28,11 +28,13 @@ public interface RoleService extends BaseService<RoleDTO> {
     RoleDTO update(Long id, RoleDTO roleDTO);
     
     /**
-     * Find all roles for a specific person
+     * Find all roles for a specific person with configurable options
      * 
      * @param personId the ID of the person
-     * @param level the mapping level to apply
+     * @param withAudit whether to include audit information
+     * @param attributes set of attributes to include
      * @return list of role DTOs for the specified person
      */
-    List<RoleDTO> findByPersonId(Long personId, MappingLevel level);
+    List<RoleDTO> findByPersonId(Long personId, boolean withAudit, Set<String> attributes);
+    
 }

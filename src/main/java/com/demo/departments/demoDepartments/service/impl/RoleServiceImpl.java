@@ -5,7 +5,6 @@ import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.persistence.repository.RoleRepository;
 import com.demo.departments.demoDepartments.service.RoleService;
 import com.demo.departments.demoDepartments.service.dto.security.RoleDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingOptions;
 import com.demo.departments.demoDepartments.service.dto.mapper.RoleMapper;
 import com.demo.departments.demoDepartments.service.utils.mapping.GraphBuilderMapperService;
@@ -16,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation of RoleService
@@ -71,32 +71,28 @@ public class RoleServiceImpl
     
     @Override
     @Transactional(readOnly = true)
-    public List<RoleDTO> findByPersonId(Long personId, MappingLevel level) {
-        // Create an appropriate entity graph based on mapping level
-        EntityGraph graph = null;
+    public List<RoleDTO> findByPersonId(Long personId, boolean withAudit, Set<String> attributes) {
+        // Create an appropriate entity graph based on attributes
+        EntityGraph graph;
         
-        // Use different fetch strategies based on mapping level
-        if (level == MappingLevel.COMPLETE) {
-            // For COMPLETE level, use a full entity graph with all attributes
-            graph = graphBuilderService.getCompleteEntityGraph(entityClass);
-        } else if (level == MappingLevel.SUMMARY) {
-            // For SUMMARY level, use a specialized graph that fetches just what's needed for IDs and counts
-            graph = createSummaryLevelGraph();
-        }
-        
-        // Fetch entities with or without graph
-        List<Role> roles;
-        if (graph != null) {
-            roles = repository.findByPersonId(personId, graph);
+        if (attributes == null || attributes.isEmpty()) {
+            // Default behavior - lightweight graph for efficient loading
+            graph = createDefaultEntityGraph();
         } else {
-            roles = repository.findByPersonId(personId);
+            // Generate targeted graph based on requested attributes
+            graph = createEntityGraph(attributes);
         }
+        
+        // Fetch entities with graph
+        List<Role> roles = repository.findByPersonId(personId, graph);
         
         // Map to DTOs with appropriate options
         MappingOptions options = MappingOptions.builder()
-                .level(level)
+                .attributes(attributes)
+                .withAudit(withAudit)
                 .build();
         
         return mapper.toDtoListWithOptions(roles, options);
     }
+    
 }

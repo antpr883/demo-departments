@@ -32,7 +32,7 @@ public interface PermissionsMapper extends EntityMapper<Permissions, Permissions
     @Override
     @Named("toDtoWithOptions")
     @Mapping(target = "roleId", source = "role.id",
-            conditionExpression = "java(options.isSummaryOrAbove() || MapperUtils.hasAncestorOfType(entity, Role.class) || MapperUtils.hasAncestorOfType(entity, Person.class))")
+            conditionExpression = "java(options.includesPath(\"role\") || MapperUtils.hasAncestorOfType(entity, Role.class) || MapperUtils.hasAncestorOfType(entity, Person.class))")
     PermissionsDTO toDtoWithOptions(Permissions entity, @Context MappingOptions options);
     
     /**
@@ -40,9 +40,9 @@ public interface PermissionsMapper extends EntityMapper<Permissions, Permissions
      */
     @AfterMapping
     default void processBaseDtoFields(@MappingTarget PermissionsDTO dto, Permissions entity, @Context MappingOptions options) {
-        // Handle BaseDTO fields - only include for BASIC level or above
-        if (!options.isBasicOrAbove()) {
-            // For MINIMAL level, clear all BaseDTO fields except ID
+        // Handle BaseDTO fields - only include audit information if requested
+        if (!options.includeAudit()) {
+            // If audit information is not requested, clear all audit fields except ID
             Long id = dto.getId(); // Save the ID
             dto.setCreatedDate(null);
             dto.setModifiedDate(null);

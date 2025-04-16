@@ -3,11 +3,9 @@ package com.demo.departments.demoDepartments.controller;
 import com.demo.departments.demoDepartments.controller.swagger.api.RoleControllerEndpoint;
 import com.demo.departments.demoDepartments.service.RoleService;
 import com.demo.departments.demoDepartments.service.dto.security.RoleDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * REST controller for managing Role entities
@@ -29,59 +29,52 @@ public class RoleController implements RoleControllerEndpoint {
     private final RoleService roleService;
 
     /**
-     * GET /api/roles/:id/full : Get the role with specified attributes
-     *
-     * @param id the id of the role to retrieve
-     * @param attributes the attributes to include (comma-separated)
-     * @return the ResponseEntity with status 200 (OK) and the role in body,
-     * or with status 404 (Not Found)
+     * Helper method to parse comma-separated attributes into a Set
      */
-    @Override
-    @GetMapping("/{id}/full")
-    public ResponseEntity<RoleDTO> getRoleWithAttributes(
-            @PathVariable @NotNull @Min(1) Long id,
-            @RequestParam(name = "attributes", required = false) String attributes) {
-        List<String> attributeList = attributes != null
-                ? Arrays.asList(attributes.split(","))
-                : List.of();
-        RoleDTO role = roleService.findByIdFull(id, attributeList);
-        return ResponseEntity.ok(role);
+    private Set<String> parseAttributesParam(String attributes) {
+        if (attributes == null || attributes.trim().isEmpty()) {
+            return null;
+        }
+        return new HashSet<>(Arrays.asList(attributes.split(",")));
     }
+
 
     @Override
     @GetMapping("/person/{personId}")
     public ResponseEntity<List<RoleDTO>> getRolesByPersonId(
             @PathVariable @NotNull @Min(1) Long personId,
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        List<RoleDTO> roles = roleService.findByPersonId(personId, mappingLevel);
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @RequestParam(name = "attributes", required = false) String attributes) {
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        List<RoleDTO> roles = roleService.findByPersonId(personId, withAudit, attributeSet);
         return ResponseEntity.ok(roles);
     }
 
     /**
-     * GET /api/roles : Get all roles with the specified mapping level
+     * GET /api/roles : Get all roles with configurable options
      *
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of roles in body
      */
     @Override
     @GetMapping
     public ResponseEntity<List<RoleDTO>> getAllRoles(
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        List<RoleDTO> roles = roleService.findAll(mappingLevel);
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @RequestParam(name = "attributes", required = false) String attributes) {
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        List<RoleDTO> roles = roleService.findAll(withAudit, attributeSet);
         return ResponseEntity.ok(roles);
     }
 
     /**
-     * GET /api/roles/:id : Get the role with the specified id and mapping level
+     * GET /api/roles/:id : Get a role by ID with configurable options
      *
      * @param id the id of the role to retrieve
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the role in body,
      * or with status 404 (Not Found)
      */
@@ -89,11 +82,11 @@ public class RoleController implements RoleControllerEndpoint {
     @GetMapping("/{id}")
     public ResponseEntity<RoleDTO> getRole(
             @PathVariable @NotNull @Min(1) Long id,
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        RoleDTO role = roleService.findById(id, mappingLevel);
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @RequestParam(name = "attributes", required = false) String attributes) {
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        RoleDTO role = roleService.findById(id, withAudit, attributeSet);
         return ResponseEntity.ok(role);
     }
 

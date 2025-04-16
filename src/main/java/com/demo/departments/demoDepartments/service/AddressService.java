@@ -2,10 +2,9 @@ package com.demo.departments.demoDepartments.service;
 
 import com.demo.departments.demoDepartments.persistence.model.Address;
 import com.demo.departments.demoDepartments.service.dto.AddressDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
-
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service interface for Address entity operations
@@ -28,11 +27,13 @@ public interface AddressService extends BaseService<AddressDTO> {
     AddressDTO update(Long id, AddressDTO addressDTO);
     
     /**
-     * Find all addresses for a specific person
+     * Find all addresses for a specific person with configurable options
      * 
      * @param personId the ID of the person
-     * @param level the mapping level to apply
+     * @param withAudit whether to include audit information
+     * @param attributes set of attributes to include
      * @return list of address DTOs for the specified person
      */
-    List<AddressDTO> findByPersonId(Long personId, MappingLevel level);
+    List<AddressDTO> findByPersonId(Long personId, boolean withAudit, Set<String> attributes);
+    
 }

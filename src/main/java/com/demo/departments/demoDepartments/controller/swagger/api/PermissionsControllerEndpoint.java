@@ -26,14 +26,15 @@ import java.util.List;
 public interface PermissionsControllerEndpoint {
 
     /**
-     * GET /api/permissions : Get all permissions with the specified mapping level
+     * GET /api/permissions : Get all permissions with configurable options
      *
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of permissions in body
      */
     @Operation(
-        summary = "Get all permissions",
-        description = "Returns all permissions with the specified mapping level"
+        summary = "Get all permissions with configurable options",
+        description = "Returns all permissions with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -47,22 +48,23 @@ public interface PermissionsControllerEndpoint {
     })
     @GetMapping
     ResponseEntity<List<PermissionsDTO>> getAllPermissions(
-            @Parameter(description = "Mapping level: MINIMAL, BASIC, SUMMARY, COMPLETE", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
-     * GET /api/permissions/:id : Get the permissions with the specified id and mapping level
+     * GET /api/permissions/:id : Get a permission by ID with configurable options
      *
-     * @param id the id of the permissions to retrieve
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
-     * @return the ResponseEntity with status 200 (OK) and the permissions in body,
+     * @param id the id of the permission to retrieve
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
+     * @return the ResponseEntity with status 200 (OK) and the permission in body,
      * or with status 404 (Not Found)
      */
     @Operation(
-        summary = "Get a permission by ID",
-        description = "Retrieves a permission by its ID with the specified mapping level"
+        summary = "Get a permission by ID with configurable options",
+        description = "Retrieves a permission by its ID with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -72,7 +74,7 @@ public interface PermissionsControllerEndpoint {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Invalid ID or mapping level",
+            description = "Invalid ID",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
         ),
         @ApiResponse(
@@ -85,49 +87,31 @@ public interface PermissionsControllerEndpoint {
     ResponseEntity<PermissionsDTO> getPermissions(
             @Parameter(description = "ID of the permission to retrieve", required = true)
             @PathVariable @NotNull @Min(1) Long id,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
-
-    /**
-     * GET /api/permissions/:id/full : Get the permissions with specified attributes
-     *
-     * @param id the id of the permissions to retrieve
-     * @param attributes the attributes to include (comma-separated)
-     * @return the ResponseEntity with status 200 (OK) and the permissions in body,
-     * or with status 404 (Not Found)
-     */
-    @Operation(
-        summary = "Get a permission with specified attributes",
-        description = "Retrieves a permission by its ID with specified attributes included"
-    )
-    @GetMapping("/{id}/full")
-    ResponseEntity<PermissionsDTO> getPermissionsWithAttributes(
-            @Parameter(description = "ID of the permission to retrieve", required = true)
-            @PathVariable @NotNull @Min(1) Long id,
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
             @Parameter(description = "Comma-separated list of attributes to include")
             @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
-     * GET /api/permissions/role/:roleId : Get all permissions for a role
+     * GET /api/permissions/role/:roleId : Get all permissions for a role with configurable options
      *
      * @param roleId the id of the role
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of permissions in body
      */
     @Operation(
-        summary = "Get all permissions for a role",
-        description = "Returns all permissions for a role with the specified mapping level"
+        summary = "Get all permissions for a role with configurable options",
+        description = "Returns all permissions for a role with optional audit information and specified attributes"
     )
     @GetMapping("/role/{roleId}")
     ResponseEntity<List<PermissionsDTO>> getPermissionsByRoleId(
             @Parameter(description = "ID of the role", required = true)
             @PathVariable @NotNull @Min(1) Long roleId,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
      * POST /api/permissions : Create a new permissions

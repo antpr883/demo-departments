@@ -3,11 +3,9 @@ package com.demo.departments.demoDepartments.controller;
 import com.demo.departments.demoDepartments.controller.swagger.api.ContactControllerEndpoint;
 import com.demo.departments.demoDepartments.service.ContactService;
 import com.demo.departments.demoDepartments.service.dto.ContactDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * REST controller for managing Contact entities
@@ -29,27 +29,39 @@ public class ContactController implements ContactControllerEndpoint {
     private final ContactService contactService;
 
     /**
-     * GET /api/contacts : Get all contacts with the specified mapping level
+     * GET /api/contacts : Get all contacts with configurable options
      *
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
      */
     @Override
     @GetMapping
     public ResponseEntity<List<ContactDTO>> getAllContacts(
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        List<ContactDTO> contacts = contactService.findAll(mappingLevel);
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @RequestParam(name = "attributes", required = false) String attributes) {
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        List<ContactDTO> contacts = contactService.findAll(withAudit, attributeSet);
         return ResponseEntity.ok(contacts);
+    }
+    
+    /**
+     * Helper method to parse comma-separated attributes into a Set
+     */
+    private Set<String> parseAttributesParam(String attributes) {
+        if (attributes == null || attributes.trim().isEmpty()) {
+            return null;
+        }
+        return new HashSet<>(Arrays.asList(attributes.split(",")));
     }
 
     /**
-     * GET /api/contacts/:id : Get the contact with the specified id and mapping level
+     * GET /api/contacts/:id : Get a contact by ID with configurable options
      *
      * @param id the id of the contact to retrieve
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the contact in body,
      * or with status 404 (Not Found)
      */
@@ -57,50 +69,32 @@ public class ContactController implements ContactControllerEndpoint {
     @GetMapping("/{id}")
     public ResponseEntity<ContactDTO> getContact(
             @PathVariable @NotNull @Min(1) Long id,
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        ContactDTO contact = contactService.findById(id, mappingLevel);
-        return ResponseEntity.ok(contact);
-    }
-
-    /**
-     * GET /api/contacts/:id/full : Get the contact with specified attributes
-     *
-     * @param id the id of the contact to retrieve
-     * @param attributes the attributes to include (comma-separated)
-     * @return the ResponseEntity with status 200 (OK) and the contact in body,
-     * or with status 404 (Not Found)
-     */
-    @Override
-    @GetMapping("/{id}/full")
-    public ResponseEntity<ContactDTO> getContactWithAttributes(
-            @PathVariable @NotNull @Min(1) Long id,
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
             @RequestParam(name = "attributes", required = false) String attributes) {
-        List<String> attributeList = attributes != null
-                ? Arrays.asList(attributes.split(","))
-                : List.of();
-        ContactDTO contact = contactService.findByIdFull(id, attributeList);
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        ContactDTO contact = contactService.findById(id, withAudit, attributeSet);
         return ResponseEntity.ok(contact);
     }
 
+
     /**
-     * GET /api/contacts/person/:personId : Get all contacts for a person
+     * GET /api/contacts/person/:personId : Get all contacts for a person with configurable options
      *
      * @param personId the id of the person
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE) 
+     * @param withAudit If true, include audit information
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
      */
     @Override
     @GetMapping("/person/{personId}")
     public ResponseEntity<List<ContactDTO>> getContactsByPersonId(
             @PathVariable @NotNull @Min(1) Long personId,
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level) {
-        MappingLevel mappingLevel = MappingLevel.valueOf(level.toUpperCase());
-        List<ContactDTO> contacts = contactService.findByPersonId(personId, mappingLevel);
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @RequestParam(name = "attributes", required = false) String attributes) {
+        
+        Set<String> attributeSet = parseAttributesParam(attributes);
+        List<ContactDTO> contacts = contactService.findByPersonId(personId, withAudit, attributeSet);
         return ResponseEntity.ok(contacts);
     }
 

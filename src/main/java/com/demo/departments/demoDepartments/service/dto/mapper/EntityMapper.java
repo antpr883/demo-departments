@@ -48,19 +48,6 @@ public interface EntityMapper<E, D> {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Maps entity list to DTO list by level
-     */
-    @Named("toDtoListByLevel")
-    default List<D> toDtoListByLevel(List<E> entities, MappingLevel level) {
-        if (entities == null) return Collections.emptyList();
-        
-        MappingOptions options = MappingOptions.builder()
-                .level(level)
-                .build();
-                
-        return toDtoListWithOptions(entities, options);
-    }
 
     /**
      * Maps entity set to DTO set
@@ -83,33 +70,7 @@ public interface EntityMapper<E, D> {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * Maps entity set to DTO set by level
-     */
-    @Named("toDtoSetByLevel")
-    default Set<D> toDtoSetByLevel(Set<E> entities, MappingLevel level) {
-        if (entities == null) return Collections.emptySet();
-        
-        MappingOptions options = MappingOptions.builder()
-                .level(level)
-                .build();
-                
-        return toDtoSetWithOptions(entities, options);
-    }
 
-    /**
-     * Maps entity to DTO based on mapping level
-     */
-    @Named("toDtoByLevel")
-    default D toDtoByLevel(E entity, MappingLevel level) {
-        if (entity == null) return null;
-        
-        MappingOptions options = MappingOptions.builder()
-                .level(level)
-                .build();
-                
-        return toDtoWithOptions(entity, options);
-    }
 
     /**
      * Maps DTO to entity

@@ -8,8 +8,10 @@ import com.demo.departments.demoDepartments.persistence.model.security.Permissio
 import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import org.mapstruct.Named;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -84,5 +86,80 @@ public class MapperUtils {
     @Named("isNotEmpty")
     public static boolean isNotEmpty(Collection<?> collection) {
         return collection != null && !collection.isEmpty();
+    }
+    
+    /**
+     * Check if permissions should be included due to a nested path like "roles.permissions"
+     */
+    @Named("hasPermissionsInNestedPath")
+    public static boolean hasPermissionsInNestedPath(MappingOptions options) {
+        if (options.getAttributes() == null || options.getAttributes().isEmpty()) {
+            return false;
+        }
+        
+        for (String attr : options.getAttributes()) {
+            // Check if there's any attribute with a path like "roles.permissions" or similar
+            if (attr.contains(".permissions")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Checks if a field in a class is of collection type
+     * This is a more robust approach than string-based heuristics
+     */
+    @Named("isFieldCollection")
+    public static boolean isFieldCollection(Class<?> clazz, String fieldName) {
+        try {
+            Field field = getFieldRecursively(clazz, fieldName);
+            if (field == null) {
+                return false;
+            }
+            
+            return Collection.class.isAssignableFrom(field.getType()) ||
+                   Map.class.isAssignableFrom(field.getType()) ||
+                   field.getType().isArray();
+        } catch (Exception e) {
+            // If we can't determine, fall back to naming convention
+            return false;
+        }
+    }
+    
+    /**
+     * Gets a field from a class or its superclasses
+     */
+    private static Field getFieldRecursively(Class<?> clazz, String fieldName) {
+        if (clazz == null || clazz == Object.class) {
+            return null;
+        }
+        
+        try {
+            return clazz.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            // If not found, try the superclass
+            return getFieldRecursively(clazz.getSuperclass(), fieldName);
+        }
+    }
+    
+    /**
+     * Check if roles should be included due to a nested path like "roles.permissions"
+     */
+    @Named("hasNestedRolesPath")
+    public static boolean hasNestedRolesPath(MappingOptions options) {
+        if (options.getAttributes() == null || options.getAttributes().isEmpty()) {
+            return false;
+        }
+        
+        for (String attr : options.getAttributes()) {
+            // Check if there's any attribute that starts with "roles."
+            if (attr.startsWith("roles.")) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

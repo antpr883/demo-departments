@@ -6,7 +6,6 @@ import com.demo.departments.demoDepartments.persistence.repository.AddressReposi
 import com.demo.departments.demoDepartments.service.AddressService;
 import com.demo.departments.demoDepartments.service.dto.AddressDTO;
 import com.demo.departments.demoDepartments.service.dto.mapper.AddressMapper;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import com.demo.departments.demoDepartments.service.dto.mapper.MappingOptions;
 import com.demo.departments.demoDepartments.service.utils.mapping.GraphBuilderMapperService;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,8 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implementation of AddressService
@@ -71,32 +72,28 @@ public class AddressServiceImpl
     
     @Override
     @Transactional(readOnly = true)
-    public List<AddressDTO> findByPersonId(Long personId, MappingLevel level) {
-        // Create an appropriate entity graph based on mapping level
-        EntityGraph graph = null;
+    public List<AddressDTO> findByPersonId(Long personId, boolean withAudit, Set<String> attributes) {
+        // Create an appropriate entity graph based on attributes
+        EntityGraph graph;
         
-        // Use different fetch strategies based on mapping level
-        if (level == MappingLevel.COMPLETE) {
-            // For COMPLETE level, use a full entity graph with all attributes
-            graph = graphBuilderService.getCompleteEntityGraph(entityClass);
-        } else if (level == MappingLevel.SUMMARY) {
-            // For SUMMARY level, use a specialized graph that fetches just what's needed for IDs and counts
-            graph = createSummaryLevelGraph();
-        }
-        
-        // Fetch entities with or without graph
-        List<Address> addresses;
-        if (graph != null) {
-            addresses = repository.findByPersonId(personId, graph);
+        if (attributes == null || attributes.isEmpty()) {
+            // Default behavior - lightweight graph for efficient loading
+            graph = createDefaultEntityGraph();
         } else {
-            addresses = repository.findByPersonId(personId);
+            // Generate targeted graph based on requested attributes
+            graph = createEntityGraph(attributes);
         }
+        
+        // Fetch entities with graph
+        List<Address> addresses = repository.findByPersonId(personId, graph);
         
         // Map to DTOs with appropriate options
         MappingOptions options = MappingOptions.builder()
-                .level(level)
+                .attributes(attributes)
+                .withAudit(withAudit)
                 .build();
         
         return mapper.toDtoListWithOptions(addresses, options);
     }
+    
 }

@@ -32,13 +32,13 @@ public interface PersonMapper extends EntityMapper<Person, PersonDTO> {
     @Named("toDtoWithOptions")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "addresses", source = "addresses", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"addresses\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.includesPath(\"addresses\"))")
     @Mapping(target = "contacts", source = "contacts", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"contacts\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.includesPath(\"contacts\"))")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "toDtoWithOptions", 
-            conditionExpression = "java(options.isCompleteOrAbove() && options.levelOrIncludes(\"roles\", MappingLevel.COMPLETE))")
+            conditionExpression = "java(options.includesPath(\"roles\") || MapperUtils.hasNestedRolesPath(options))")
     @Mapping(target = "password", source = "password",
-            conditionExpression = "java(options.isCompleteOrAbove())")
+            conditionExpression = "java(options.includes(\"password\"))")
     PersonDTO toDtoWithOptions(Person person, @Context MappingOptions options);
 
     /**
@@ -46,9 +46,9 @@ public interface PersonMapper extends EntityMapper<Person, PersonDTO> {
      */
     @AfterMapping
     default void processFieldsBasedOnOptions(@MappingTarget PersonDTO dto, Person person, @Context MappingOptions options) {
-        // Handle BaseDTO fields - only include for BASIC level or above
-        if (!options.isBasicOrAbove()) {
-            // For MINIMAL level, clear all BaseDTO fields except ID
+        // Handle audit fields
+        if (!options.includeAudit()) {
+            // If audit information is disabled, clear all audit fields except ID
             Long id = dto.getId(); // Save the ID
             dto.setCreatedDate(null);
             dto.setModifiedDate(null);
@@ -57,40 +57,49 @@ public interface PersonMapper extends EntityMapper<Person, PersonDTO> {
             dto.setId(id); // Restore the ID
         }
         
-        // Handle password field - only include for COMPLETE level
-        if (!options.isCompleteOrAbove()) {
+        // Handle password field - only include for certain conditions
+        // For security, always exclude password unless explicitly requested
+        if (!options.includes("password")) {
             dto.setPassword(null);
         }
         
-        // Handle collection IDs and counts - only for SUMMARY or above
-        if (options.isSummaryOrAbove()) {
+        // Handle collection entities based on attributes
+        // Addresses
+        if (options.includesPath("addresses")) {
             if (person.getAddresses() != null && !person.getAddresses().isEmpty()) {
+                // Already mapped in the main mapper method
                 dto.setAddressIds(MapperUtils.extractIds(person.getAddresses()));
                 dto.setAddressCount(person.getAddresses().size());
             }
-            
+        } else {
+            dto.setAddresses(Collections.emptySet());
+            dto.setAddressIds(Collections.emptySet());
+            dto.setAddressCount(0);
+        }
+        
+        // Contacts
+        if (options.includesPath("contacts")) {
             if (person.getContacts() != null && !person.getContacts().isEmpty()) {
                 dto.setContactIds(MapperUtils.extractIds(person.getContacts()));
                 dto.setContactCount(person.getContacts().size());
             }
-            
+        } else {
+            dto.setContacts(Collections.emptySet());
+            dto.setContactIds(Collections.emptySet());
+            dto.setContactCount(0);
+        }
+        
+        // Roles
+        boolean includeRoles = options.includesPath("roles") || MapperUtils.hasNestedRolesPath(options);
+        
+        if (includeRoles) {
             if (person.getRoles() != null && !person.getRoles().isEmpty()) {
                 dto.setRoleIds(MapperUtils.extractIds(person.getRoles()));
                 dto.setRoleCount(person.getRoles().size());
             }
         } else {
-            // For MINIMAL and BASIC levels, explicitly set collections to empty
-            dto.setAddresses(Collections.emptySet());
-            dto.setContacts(Collections.emptySet());
             dto.setRoles(Collections.emptySet());
-            
-            // Clear the IDs and counts
-            dto.setAddressIds(Collections.emptySet());
-            dto.setContactIds(Collections.emptySet());
             dto.setRoleIds(Collections.emptySet());
-            
-            dto.setAddressCount(0);
-            dto.setContactCount(0);
             dto.setRoleCount(0);
         }
     }

@@ -1,8 +1,7 @@
 package com.demo.departments.demoDepartments.service;
 
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
-
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base service interface that defines common CRUD operations with flexible mapping options
@@ -19,37 +18,41 @@ public interface BaseService<T> {
     void deleteById(Long id);
 
     /**
-     * Find entity by ID with mapping determined by level
+     * Find entity by ID with configurable options for audit information and included attributes
      * 
      * @param id Entity ID
-     * @param level Mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
-     * @return DTO with level-appropriate mapping
+     * @param withAudit Whether to include audit information (createdDate, modifiedDate, etc.)
+     * @param attributes Set of attributes to include (like "addresses", "contacts", "roles.permissions")
+     * @return DTO with requested configuration
      */
-    T findById(Long id, MappingLevel level);
+    T findById(Long id, boolean withAudit, Set<String> attributes);
 
     /**
-     * Find entity by ID with full data based on specified attributes
-     * This is the core dynamic mapping method that loads only requested associations
+     * Find entity by ID with default configuration (no audit, no additional attributes)
      * 
      * @param id Entity ID
-     * @param attributes List of attributes to include (like "addresses", "contacts", "roles.permissions")
-     * @return DTO with requested associations
+     * @return DTO with basic fields
      */
-    T findByIdFull(Long id, List<String> attributes);
+    default T findById(Long id) {
+        return findById(id, false, null);
+    }
     
     /**
-     * Find all entities with mapping determined by level
+     * Find all entities with configurable options for audit information and included attributes
      * 
-     * @param level Mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
-     * @return List of DTOs with level-appropriate mapping
+     * @param withAudit Whether to include audit information (createdDate, modifiedDate, etc.)
+     * @param attributes Set of attributes to include (like "addresses", "contacts", "roles.permissions")
+     * @return List of DTOs with requested configuration
      */
-    List<T> findAll(MappingLevel level);
-    
+    List<T> findAll(boolean withAudit, Set<String> attributes);
+
     /**
-     * Find all entities with full data based on requested attributes
+     * Find all entities with default configuration (no audit, no additional attributes)
      * 
-     * @param attributes List of attributes to include
-     * @return List of DTOs with attribute-based mapping
+     * @return List of DTOs with basic fields
      */
-    List<T> findAllFull(List<String> attributes);
+    default List<T> findAll() {
+        return findAll(false, null);
+    }
+    
 }

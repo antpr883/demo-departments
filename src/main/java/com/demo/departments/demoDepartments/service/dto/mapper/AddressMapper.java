@@ -31,7 +31,7 @@ public interface AddressMapper extends EntityMapper<Address, AddressDTO> {
     @Override
     @Named("toDtoWithOptions")
     @Mapping(target = "personId", source = "person.id", 
-            conditionExpression = "java(options.isSummaryOrAbove() || MapperUtils.hasAncestorOfType(entity, Person.class))")
+            conditionExpression = "java(options.includesPath(\"person\") || MapperUtils.hasAncestorOfType(entity, Person.class))")
     AddressDTO toDtoWithOptions(Address entity, @Context MappingOptions options);
     
     /**
@@ -39,9 +39,9 @@ public interface AddressMapper extends EntityMapper<Address, AddressDTO> {
      */
     @AfterMapping
     default void processBaseDtoFields(@MappingTarget AddressDTO dto, Address entity, @Context MappingOptions options) {
-        // Handle BaseDTO fields - only include for BASIC level or above
-        if (!options.isBasicOrAbove()) {
-            // For MINIMAL level, clear all BaseDTO fields except ID
+        // Handle BaseDTO fields - only include audit information if requested
+        if (!options.includeAudit()) {
+            // If audit information is not requested, clear all audit fields except ID
             Long id = dto.getId(); // Save the ID
             dto.setCreatedDate(null);
             dto.setModifiedDate(null);

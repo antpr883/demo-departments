@@ -26,14 +26,15 @@ import java.util.List;
 public interface ContactControllerEndpoint {
 
     /**
-     * GET /api/contacts : Get all contacts with the specified mapping level
+     * GET /api/contacts : Get all contacts with configurable options
      *
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
      */
     @Operation(
-        summary = "Get all contacts",
-        description = "Returns all contacts with the specified mapping level"
+        summary = "Get all contacts with configurable options",
+        description = "Returns all contacts with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -47,22 +48,23 @@ public interface ContactControllerEndpoint {
     })
     @GetMapping
     ResponseEntity<List<ContactDTO>> getAllContacts(
-            @Parameter(description = "Mapping level: MINIMAL, BASIC, SUMMARY, COMPLETE", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
-     * GET /api/contacts/:id : Get the contact with the specified id and mapping level
+     * GET /api/contacts/:id : Get a contact by ID with configurable options
      *
      * @param id the id of the contact to retrieve
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the contact in body,
      * or with status 404 (Not Found)
      */
     @Operation(
-        summary = "Get a contact by ID",
-        description = "Retrieves a contact by its ID with the specified mapping level"
+        summary = "Get a contact by ID with configurable options",
+        description = "Retrieves a contact by its ID with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -72,7 +74,7 @@ public interface ContactControllerEndpoint {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Invalid ID or mapping level",
+            description = "Invalid ID",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
         ),
         @ApiResponse(
@@ -85,49 +87,31 @@ public interface ContactControllerEndpoint {
     ResponseEntity<ContactDTO> getContact(
             @Parameter(description = "ID of the contact to retrieve", required = true)
             @PathVariable @NotNull @Min(1) Long id,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
-
-    /**
-     * GET /api/contacts/:id/full : Get the contact with specified attributes
-     *
-     * @param id the id of the contact to retrieve
-     * @param attributes the attributes to include (comma-separated)
-     * @return the ResponseEntity with status 200 (OK) and the contact in body,
-     * or with status 404 (Not Found)
-     */
-    @Operation(
-        summary = "Get a contact with specified attributes",
-        description = "Retrieves a contact by its ID with specified attributes included"
-    )
-    @GetMapping("/{id}/full")
-    ResponseEntity<ContactDTO> getContactWithAttributes(
-            @Parameter(description = "ID of the contact to retrieve", required = true)
-            @PathVariable @NotNull @Min(1) Long id,
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
             @Parameter(description = "Comma-separated list of attributes to include")
             @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
-     * GET /api/contacts/person/:personId : Get all contacts for a person
+     * GET /api/contacts/person/:personId : Get all contacts for a person with configurable options
      *
      * @param personId the id of the person
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
      */
     @Operation(
-        summary = "Get all contacts for a person",
-        description = "Returns all contacts for a person with the specified mapping level"
+        summary = "Get all contacts for a person with configurable options",
+        description = "Returns all contacts for a person with optional audit information and specified attributes"
     )
     @GetMapping("/person/{personId}")
     ResponseEntity<List<ContactDTO>> getContactsByPersonId(
             @Parameter(description = "ID of the person", required = true)
             @PathVariable @NotNull @Min(1) Long personId,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
      * POST /api/contacts : Create a new contact

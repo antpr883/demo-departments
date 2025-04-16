@@ -7,7 +7,6 @@ import com.demo.departments.demoDepartments.persistence.model.security.Role;
 import com.demo.departments.demoDepartments.persistence.repository.*;
 import com.demo.departments.demoDepartments.service.*;
 import com.demo.departments.demoDepartments.service.dto.PersonDTO;
-import com.demo.departments.demoDepartments.service.dto.mapper.MappingLevel;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,9 +100,9 @@ public class DataLoader implements ApplicationRunner {
         
         try {
             // Verify data was loaded properly by retrieving one person with all details
-            List<String> attributes = List.of("contacts", "roles.permissions", "addresses");
-            PersonDTO dto = personService.findByIdFull(1L, attributes);
-            personService.findById(1L, MappingLevel.COMPLETE);
+            Set<String> attributes = new HashSet<>(List.of("contacts", "roles.permissions", "addresses"));
+            PersonDTO dto = personService.findById(1L, true, attributes);
+            String a = "";
         } catch (Exception e) {
             log.warn("Could not verify data: {}", e.getMessage());
         }

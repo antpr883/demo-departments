@@ -26,14 +26,15 @@ import java.util.List;
 public interface AddressControllerEndpoint {
 
     /**
-     * GET /api/addresses : Get all addresses with the specified mapping level
+     * GET /api/addresses : Get all addresses with configurable options
      *
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of addresses in body
      */
     @Operation(
-        summary = "Get all addresses",
-        description = "Returns all addresses with the specified mapping level"
+        summary = "Get all addresses with configurable options",
+        description = "Returns all addresses with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -47,22 +48,23 @@ public interface AddressControllerEndpoint {
     })
     @GetMapping
     ResponseEntity<List<AddressDTO>> getAllAddresses(
-            @Parameter(description = "Mapping level: MINIMAL, BASIC, SUMMARY, COMPLETE", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
-     * GET /api/addresses/:id : Get the address with the specified id and mapping level
+     * GET /api/addresses/:id : Get an address by ID with configurable options
      *
      * @param id the id of the address to retrieve
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the address in body,
      * or with status 404 (Not Found)
      */
     @Operation(
-        summary = "Get an address by ID",
-        description = "Retrieves an address by its ID with the specified mapping level"
+        summary = "Get an address by ID with configurable options",
+        description = "Retrieves an address by its ID with optional audit information and specified attributes"
     )
     @ApiResponses({
         @ApiResponse(
@@ -72,7 +74,7 @@ public interface AddressControllerEndpoint {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Invalid ID or mapping level",
+            description = "Invalid ID",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
         ),
         @ApiResponse(
@@ -85,49 +87,32 @@ public interface AddressControllerEndpoint {
     ResponseEntity<AddressDTO> getAddress(
             @Parameter(description = "ID of the address to retrieve", required = true)
             @PathVariable @NotNull @Min(1) Long id,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
-
-    /**
-     * GET /api/addresses/:id/full : Get the address with specified attributes
-     *
-     * @param id the id of the address to retrieve
-     * @param attributes the attributes to include (comma-separated)
-     * @return the ResponseEntity with status 200 (OK) and the address in body,
-     * or with status 404 (Not Found)
-     */
-    @Operation(
-        summary = "Get an address with specified attributes",
-        description = "Retrieves an address by its ID with specified attributes included"
-    )
-    @GetMapping("/{id}/full")
-    ResponseEntity<AddressDTO> getAddressWithAttributes(
-            @Parameter(description = "ID of the address to retrieve", required = true)
-            @PathVariable @NotNull @Min(1) Long id,
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
             @Parameter(description = "Comma-separated list of attributes to include")
             @RequestParam(name = "attributes", required = false) String attributes);
 
+
     /**
-     * GET /api/addresses/person/:personId : Get all addresses for a person
+     * GET /api/addresses/person/:personId : Get all addresses for a person with configurable options
      *
      * @param personId the id of the person
-     * @param level the mapping level (MINIMAL, BASIC, SUMMARY, COMPLETE)
+     * @param withAudit If true, include audit information (createdDate, modifiedDate, createdBy, modifiedBy)
+     * @param attributes Comma-separated list of attributes to include
      * @return the ResponseEntity with status 200 (OK) and the list of addresses in body
      */
     @Operation(
-        summary = "Get all addresses for a person",
-        description = "Returns all addresses for a person with the specified mapping level"
+        summary = "Get all addresses for a person with configurable options",
+        description = "Returns all addresses for a person with optional audit information and specified attributes"
     )
     @GetMapping("/person/{personId}")
     ResponseEntity<List<AddressDTO>> getAddressesByPersonId(
             @Parameter(description = "ID of the person", required = true)
             @PathVariable @NotNull @Min(1) Long personId,
-            @Parameter(description = "Mapping level", schema = @Schema(allowableValues = {"MINIMAL", "BASIC", "SUMMARY", "COMPLETE"}))
-            @RequestParam(name = "level", defaultValue = "SUMMARY")
-            @Pattern(regexp = "^(MINIMAL|BASIC|SUMMARY|COMPLETE)$", message = "Mapping level must be one of: MINIMAL, BASIC, SUMMARY, COMPLETE")
-            String level);
+            @Parameter(description = "Include audit information (createdDate, modifiedDate, createdBy, modifiedBy)")
+            @RequestParam(name = "withAudit", defaultValue = "false") boolean withAudit,
+            @Parameter(description = "Comma-separated list of attributes to include")
+            @RequestParam(name = "attributes", required = false) String attributes);
 
     /**
      * POST /api/addresses : Create a new address

@@ -1,6 +1,7 @@
 package com.demo.departments.demoDepartments.persistence.model;
 
 import com.demo.departments.demoDepartments.persistence.model.base.PersistenceModel;
+import com.demo.departments.demoDepartments.persistence.utils.mapping.MappingAttribute;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -35,6 +36,11 @@ public class Address extends PersistenceModel {
 
 
     @ToString.Exclude
+    @MappingAttribute(
+            path = "person",
+            targetEntity = Person.class,
+            description = "Person addresses"
+    )
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "person_id")
     private Person person;
